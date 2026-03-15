@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cthugha Architecture Review</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:monospace;background:#0e0e0e;color:#ccc;padding:2rem;max-width:960px;margin:0 auto}
+h1{font-size:16px;font-weight:500;color:#fa0;margin-bottom:4px}
+.subtitle{font-size:10px;color:#555;margin-bottom:2rem}
+h2{font-size:12px;font-weight:500;color:#888;letter-spacing:1px;text-transform:uppercase;margin:2rem 0 0.7rem;padding-bottom:4px;border-bottom:0.5px solid #222}
+h2:first-of-type{margin-top:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;margin-bottom:4px}
+.card{background:#141414;border:0.5px solid #2a2a2a;border-radius:8px;padding:10px 12px}
+.card-title{font-size:11px;font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.badge{font-size:9px;padding:1px 6px;border-radius:3px;font-weight:500}
+.b-high{background:#1a3a1a;color:#4fa}.b-med{background:#1a2a3a;color:#4af}.b-lo{background:#2a1a0a;color:#fa4}.b-perf{background:#2a0a2a;color:#f4f}
+.card p{font-size:10px;color:#888;line-height:1.6;margin-bottom:4px}
+.prob{color:#555;font-size:9px;font-style:italic;border-left:2px solid #333;padding-left:6px;margin-bottom:4px}
+.sol{color:#888;font-size:9px;border-left:2px solid #1a3a1a;padding-left:6px}
+.solid-row{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid #1e1e1e;font-size:10px}
+.solid-row:last-child{border-bottom:none}
+.s-label{min-width:28px;font-weight:500;color:#888}
+.s-principle{min-width:140px;color:#888;font-size:9px}
+.s-violation{color:#555;font-size:9px;line-height:1.5;flex:1}
+.s-status{font-size:9px;padding:1px 5px;border-radius:2px;white-space:nowrap}
+.s-ok{background:#1a3a1a;color:#4fa}.s-warn{background:#2a1a0a;color:#fa4}.s-fail{background:#3a0a0a;color:#f44}
+.test-row{display:flex;gap:8px;align-items:center;padding:3px 0;font-size:9px;border-bottom:0.5px solid #1a1a1a}
+.test-row:last-child{border-bottom:none}
+.t-area{min-width:80px;color:#555}
+.t-desc{color:#888;flex:1;line-height:1.4}
+.t-pri{font-size:8px;padding:1px 5px;border-radius:2px;background:#111;border:0.5px solid #2a2a2a;color:#555}
+.subsystem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}
+.ss{background:#111;border:0.5px solid #222;border-radius:6px;padding:7px 9px}
+.ss-name{font-size:10px;font-weight:500;margin-bottom:3px;color:#ccc}
+.ss-desc{font-size:8px;color:#555;line-height:1.4}
+.roadmap{display:flex;flex-direction:column;gap:4px}
+.rm-row{display:flex;align-items:center;gap:8px;padding:5px 8px;background:#111;border:0.5px solid #222;border-radius:5px}
+.rm-num{font-size:11px;font-weight:500;color:#555;min-width:16px}
+.rm-pattern{font-size:10px;font-weight:500;min-width:130px}
+.rm-why{font-size:9px;color:#888;flex:1;line-height:1.4}
+.rm-effort{font-size:8px;padding:1px 5px;border-radius:2px;white-space:nowrap}
+.e-hi{background:#3a0a0a;color:#f44}.e-med{background:#2a1a0a;color:#fa4}.e-lo{background:#1a3a1a;color:#4fa}
+.globals{display:flex;flex-wrap:wrap;gap:4px}
+.glob{font-size:8px;padding:2px 6px;border-radius:3px;background:#111;border:0.5px solid #222;color:#555}
+.glob.mutable{border-color:#fa44;color:#fa8}
+.glob.constant{border-color:#4fa4;color:#4fa}
+.stat-row{display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap}
+.stat{background:#141414;border:0.5px solid #2a2a2a;border-radius:6px;padding:8px 16px;text-align:center;min-width:80px}
+.stat-n{font-size:22px;font-weight:500;color:#fa0}
+.stat-l{font-size:9px;color:#555;margin-top:2px}
+.legend{font-size:9px;color:#555;margin-top:6px}
+</style>
+</head>
+<body>
+
+<h1>Cthugha v8 — Architecture Review</h1>
+<div class="subtitle">GoF patterns · SOLID analysis · missing tests · refactor roadmap</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="stat-n">10</div><div class="stat-l">subsystems</div></div>
+  <div class="stat"><div class="stat-n">21</div><div class="stat-l">globals</div></div>
+  <div class="stat"><div class="stat-n">8</div><div class="stat-l">GoF patterns</div></div>
+  <div class="stat"><div class="stat-n">22</div><div class="stat-l">missing tests</div></div>
+  <div class="stat"><div class="stat-n">5</div><div class="stat-l">SOLID issues</div></div>
+</div>
+
+<h2>Subsystems</h2>
+<div class="subsystem-grid">
+  <div class="ss"><div class="ss-name">FireEngine</div><div class="ss-desc">Float32Array pixel buffer, cellular automaton diffusion, PAL_FIRE palette mapping</div></div>
+  <div class="ss"><div class="ss-name">VFXPool</div><div class="ss-desc">Array of heterogeneous objects (ring, flash, sparkle, rocket, googly…) updated in one loop</div></div>
+  <div class="ss"><div class="ss-name">Creatures</div><div class="ss-desc">16 persistent blob objects, separate from VFXPool — inconsistent lifecycle</div></div>
+  <div class="ss"><div class="ss-name">Scheduler</div><div class="ss-desc">setInterval + Web Audio lookahead, triggers synth + trigViz per note</div></div>
+  <div class="ss"><div class="ss-name">Synth</div><div class="ss-desc">Single 200-line function, 16-case switch creating oscillators/noise per drum type</div></div>
+  <div class="ss"><div class="ss-name">Sequencer</div><div class="ss-desc">2D steps[ch][step] array, numSteps, curStep, schedGen generation token</div></div>
+  <div class="ss"><div class="ss-name">PresetSystem</div><div class="ss-desc">PRESETS object literal + loadPreset() with 3 branches + DOM manipulation</div></div>
+  <div class="ss"><div class="ss-name">Sampler</div><div class="ss-desc">MediaRecorder + decodeAudioData + onset detection + spectral classifier</div></div>
+  <div class="ss"><div class="ss-name">GridUI</div><div class="ss-desc">buildGrid() rebuilds full DOM on every state change — no diffing</div></div>
+  <div class="ss"><div class="ss-name">VFXSelector</div><div class="ss-desc">chanVfx Set[] per channel, pill DOM elements toggling Set membership</div></div>
+</div>
+
+<h2>Global State (21 variables)</h2>
+<div class="globals">
+  <span class="glob mutable">fireData</span><span class="glob mutable">activeHeat</span><span class="glob mutable">vfxObjs</span>
+  <span class="glob mutable">creatures</span><span class="glob mutable">balloons</span><span class="glob mutable">steps</span>
+  <span class="glob mutable">chanVols</span><span class="glob mutable">chanVfx</span><span class="glob mutable">vizLevels</span>
+  <span class="glob mutable">playing</span><span class="glob mutable">curStep</span><span class="glob mutable">nextTime</span>
+  <span class="glob mutable">timerId</span><span class="glob mutable">schedGen</span><span class="glob mutable">numSteps</span>
+  <span class="glob mutable">vizIntensity</span><span class="glob mutable">PRESETS (mutated by sampler)</span>
+  <span class="glob constant">CHANNELS (unfrozen)</span><span class="glob constant">CH_HEAT (unfrozen)</span>
+  <span class="glob constant">mountain (truly const)</span><span class="glob">ac / masterGain / seqAnalyser</span>
+</div>
+<div class="legend">🟠 orange = mutable runtime state &nbsp;·&nbsp; 🟢 green = intended constants (should be Object.freeze'd)</div>
+
+<h2>GoF Pattern Opportunities</h2>
+<div class="grid2">
+  <div class="card">
+    <div class="card-title"><span class="badge b-high">STRATEGY</span> Priority 1</div>
+    <div class="prob">synth() is a 200-line switch over 16 types. vfxTick() is a massive if/else over 10 object kinds. PAL_FIRE is hardcoded.</div>
+    <div class="sol">SynthStrategy map: { kick: { play(when,vol) } }. VFXStrategy map: { ring: { update(o), render(o,vx) } }. FirePaletteStrategy: { map(v):[r,g,b] }. New type = one map entry, zero edits to existing code.</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge b-high">OBSERVER / EventBus</span> Priority 2</div>
+    <div class="prob">trigViz() has 7 direct responsibilities. Scheduler knows about fire, VFX, bar chart, creatures. New effect = edit trigViz().</div>
+    <div class="sol">bus.emit('note', {ci, delay, vol}). FireEngine, VFXPool, BarChart, Creatures all subscribe. trigViz() is deleted. New effects subscribe without touching existing code.</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge b-high">TEMPLATE METHOD</span> Priority 3</div>
+    <div class="prob">VFX objects share init→update→render→expire lifecycle but it's duplicated across 10 if/else branches. Balloons and creatures run in separate loops.</div>
+    <div class="sol">VFXObject base: { update(), render(vx), isExpired() }. Subclasses override steps. vfxTick() becomes a single forEach. Three loops unified.</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge b-med">COMMAND</span> Priority 4</div>
+    <div class="prob">loadPreset() has 3 magic string branches (__random, __clear, named). No undo. Preset actions are not first-class objects.</div>
+    <div class="sol">PresetCommand: { execute(), undo() }. CommandInvoker keeps history stack. RandomCommand, ClearCommand, LoadCommand implement the interface. Undo/redo for free.</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge b-med">FACADE</span> Priority 5</div>
+    <div class="prob">Scheduler has 8 direct global dependencies. buildGrid() has 4. Nothing can be tested in isolation.</div>
+    <div class="sol">AudioEngine facade: { play(ci,t), vol(ci) }. SequencerState facade: { getStep(ci,s), numSteps }. VFXConfig facade: { getEffects(ci) }. Injectable in tests.</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge b-med">STATE MACHINE</span> Priority 6</div>
+    <div class="prob">Sequencer STOPPED/PLAYING managed by scattered booleans. Sampler UNARMED/ARMED/RECORDING/PROCESSING managed by isRecording + null-checks.</div>
+    <div class="sol">SequencerFSM + SamplerFSM with explicit transitions. Impossible transitions caught at the state boundary. Each state owns its enter/exit side effects.</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge b-perf">OBJECT POOL</span> Priority 7</div>
+    <div class="prob">VFX objects allocated as plain literals on every note hit, GC'd when expired. High allocation rate at intensity=3 with all effects active.</div>
+    <div class="sol">Pre-allocate 300 objects at startup. acquire(kind) resets and returns a pooled object. release(obj) returns it. vfxObjs/balloons/creatures unified under one PoolManager.</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge b-lo">BUILDER</span> Priority 8</div>
+    <div class="prob">Preset objects are plain { bpm, swing, pattern } literals. analyzeAndBuildPreset() mixes analysis with construction across 40 lines with no validation.</div>
+    <div class="sol">PresetBuilder: .setBpm(n).setSwing(n).setPattern(p).build(). Validates bpm range, pattern dimensions at build() time. Separates analysis from construction.</div>
+  </div>
+</div>
+
+<h2>SOLID Violations</h2>
+<div class="card" style="margin-bottom:8px">
+  <div class="solid-row"><span class="s-label">S</span><span class="s-principle">Single Responsibility</span><span class="s-violation">trigViz() handles bar chart, fire injection, strobe, balloon, sparkle, firework, creature — 7 responsibilities in one function</span><span class="s-status s-fail">FAIL</span></div>
+  <div class="solid-row"><span class="s-label">O</span><span class="s-principle">Open / Closed</span><span class="s-violation">New VFX type = edit trigViz() + vfxTick() + buildGrid() + VFX_DEFS — 4 touch points every time</span><span class="s-status s-fail">FAIL</span></div>
+  <div class="solid-row"><span class="s-label">L</span><span class="s-principle">Liskov Substitution</span><span class="s-violation">VFX objects have no shared interface — rockets, sparkles, googlys are structurally incompatible plain objects</span><span class="s-status s-warn">WEAK</span></div>
+  <div class="solid-row"><span class="s-label">I</span><span class="s-principle">Interface Segregation</span><span class="s-violation">JS/no inheritance — but synth() forces type-string dispatch rather than a typed interface per drum</span><span class="s-status s-warn">N/A</span></div>
+  <div class="solid-row"><span class="s-label">D</span><span class="s-principle">Dependency Inversion</span><span class="s-violation">Scheduler calls synth(), trigViz(), markStep() by name. FireEngine reads seqAnalyser directly. No abstractions between subsystems.</span><span class="s-status s-fail">FAIL</span></div>
+</div>
+
+<h2>Missing Tests (22)</h2>
+<div class="card" style="margin-bottom:8px">
+  <div class="test-row"><span class="t-area">Scheduler</span><span class="t-desc">schedGen prevents stale markStep callbacks after preset switch</span><span class="t-pri">regression</span></div>
+  <div class="test-row"><span class="t-area">Scheduler</span><span class="t-desc">startScheduler() always clears previous interval — no stacked timers</span><span class="t-pri">regression</span></div>
+  <div class="test-row"><span class="t-area">Scheduler</span><span class="t-desc">swing offset at boundary values (0%, 66%)</span><span class="t-pri">unit</span></div>
+  <div class="test-row"><span class="t-area">FireEngine</span><span class="t-desc">addHeat(intensity=0) injects nothing into fireData</span><span class="t-pri">unit</span></div>
+  <div class="test-row"><span class="t-area">FireEngine</span><span class="t-desc">fireData stays within [0,255] after N ticks at max heat load</span><span class="t-pri">invariant</span></div>
+  <div class="test-row"><span class="t-area">FireEngine</span><span class="t-desc">decay doesn't grow unboundedly at vizIntensity=3.0</span><span class="t-pri">invariant</span></div>
+  <div class="test-row"><span class="t-area">VFXPool</span><span class="t-desc">Hard cap at MAX_OBJS — spawning beyond limit drops, not crashes</span><span class="t-pri">boundary</span></div>
+  <div class="test-row"><span class="t-area">VFXPool</span><span class="t-desc">Googly particle vy accumulates gravity correctly over N frames</span><span class="t-pri">unit</span></div>
+  <div class="test-row"><span class="t-area">Preset</span><span class="t-desc">loadPreset('__clear') stops scheduler and zeroes all state</span><span class="t-pri">integration</span></div>
+  <div class="test-row"><span class="t-area">Preset</span><span class="t-desc">loadPreset with unknown name is a no-op</span><span class="t-pri">boundary</span></div>
+  <div class="test-row"><span class="t-area">Preset</span><span class="t-desc">Pattern is always 16ch × 32 steps after loadPreset</span><span class="t-pri">invariant</span></div>
+  <div class="test-row"><span class="t-area">Classifier</span><span class="t-desc">spectralCentroid returns 0 for silent buffer (no divide-by-zero)</span><span class="t-pri">edge case</span></div>
+  <div class="test-row"><span class="t-area">Classifier</span><span class="t-desc">ZCR consistent regardless of buffer length (fixed denominator)</span><span class="t-pri">regression</span></div>
+  <div class="test-row"><span class="t-area">Classifier</span><span class="t-desc">classifyTransient maps known synthetic inputs to correct channels</span><span class="t-pri">unit</span></div>
+  <div class="test-row"><span class="t-area">Onset</span><span class="t-desc">Local-maximum detector finds all peaks in known RMS array</span><span class="t-pri">unit</span></div>
+  <div class="test-row"><span class="t-area">Onset</span><span class="t-desc">Onset detection does not fire on steps beyond analyzeSteps</span><span class="t-pri">boundary</span></div>
+  <div class="test-row"><span class="t-area">Creature</span><span class="t-desc">Repulsion prevents x-overlap below 36px threshold</span><span class="t-pri">invariant</span></div>
+  <div class="test-row"><span class="t-area">Creature</span><span class="t-desc">x stays within [20, FW-20] boundary clamp</span><span class="t-pri">invariant</span></div>
+  <div class="test-row"><span class="t-area">Balloon</span><span class="t-desc">Balloon nulled and respawned after pop — no memory leak</span><span class="t-pri">lifecycle</span></div>
+  <div class="test-row"><span class="t-area">GridUI</span><span class="t-desc">buildGrid() produces exactly numSteps step elements per channel</span><span class="t-pri">unit</span></div>
+  <div class="test-row"><span class="t-area">GridUI</span><span class="t-desc">VFX pill toggle correctly updates chanVfx Set</span><span class="t-pri">unit</span></div>
+  <div class="test-row"><span class="t-area">GridUI</span><span class="t-desc">schedGen increments on buildGrid() called mid-play</span><span class="t-pri">regression</span></div>
+</div>
+
+<h2>Refactor Roadmap</h2>
+<div class="roadmap">
+  <div class="rm-row"><span class="rm-num">1</span><span class="rm-pattern" style="color:#4fa">STRATEGY</span><span class="rm-why">Kills synth() switch + vfxTick() if/else. New drum/VFX type = one new map entry, zero edits to existing code. Biggest single unlock.</span><span class="rm-effort e-med">effort: med</span></div>
+  <div class="rm-row"><span class="rm-num">2</span><span class="rm-pattern" style="color:#4fa">OBSERVER / EventBus</span><span class="rm-why">Deletes trigViz() entirely. Scheduler stops knowing about visuals. Each subsystem independently extensible.</span><span class="rm-effort e-med">effort: med</span></div>
+  <div class="rm-row"><span class="rm-num">3</span><span class="rm-pattern" style="color:#4fa">TEMPLATE METHOD</span><span class="rm-why">Unifies 3 separate update loops (vfxObjs, balloons, creatures) into one. Adds clean extension point for future VFX types.</span><span class="rm-effort e-med">effort: med</span></div>
+  <div class="rm-row"><span class="rm-num">4</span><span class="rm-pattern" style="color:#4af">COMMAND</span><span class="rm-why">loadPreset() magic strings become typed Command objects. Undo/redo history comes for free.</span><span class="rm-effort e-med">effort: med</span></div>
+  <div class="rm-row"><span class="rm-num">5</span><span class="rm-pattern" style="color:#4af">FACADE</span><span class="rm-why">Prerequisite for unit testing. Each subsystem gets a narrow injectable interface. Unlocks the 22 missing tests.</span><span class="rm-effort e-hi">effort: high</span></div>
+  <div class="rm-row"><span class="rm-num">6</span><span class="rm-pattern" style="color:#fa4">STATE MACHINE</span><span class="rm-why">Eliminates scattered boolean guards. Impossible transitions become explicit errors. Sampler especially benefits.</span><span class="rm-effort e-med">effort: med</span></div>
+  <div class="rm-row"><span class="rm-num">7</span><span class="rm-pattern" style="color:#f4f">OBJECT POOL</span><span class="rm-why">Reduces GC jank at high intensity. Meaningful only at vizIntensity=3 with all VFX active — defer until felt.</span><span class="rm-effort e-hi">effort: med-hi</span></div>
+  <div class="rm-row"><span class="rm-num">8</span><span class="rm-pattern" style="color:#fa4">BUILDER</span><span class="rm-why">Cleaner preset construction with validation at build() time. Low effort, nice-to-have.</span><span class="rm-effort e-lo">effort: low</span></div>
+</div>
+
+</body>
+</html>
