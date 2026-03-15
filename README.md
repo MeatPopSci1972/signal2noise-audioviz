@@ -3,6 +3,12 @@
 A browser-based audio visualizer + drum sequencer, built as a prototype-to-production teaching project.
 
 Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualizer by Kevin "Zaph" Burfitt.
+## Live demo
+
+**[▶ Launch Signal2Noise AudioViz v8](https://meatpopsci1972.github.io/Signal2Noise_AudioViz/)**
+
+Hosted via GitHub Pages. Click play, then try a preset — no install, no build step.
+
 
 ---
 
