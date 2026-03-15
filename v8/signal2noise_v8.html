@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 #app{background:#080808;border-radius:8px;font-family:monospace;overflow:hidden;display:flex;flex-direction:column;max-width:900px;margin:0 auto}
-#fireWrap{position:relative;width:100%;background:#000;flex-shrink:0}
+#fireWrap{position:relative;width:100%;background:#000;flex-shrink:0;cursor:pointer}
 #cv,#vfx{display:block;width:100%}
 #vfx{position:absolute;top:0;left:0;height:100%;pointer-events:none}
 #transport{display:flex;align-items:center;gap:7px;padding:5px 9px;background:#050505;border-bottom:1px solid #161616;flex-wrap:wrap}
@@ -445,7 +445,20 @@ buildBtn.addEventListener('click',()=>{if(!recBuffer){document.getElementById('s
 loadPreset('boom');
 buildGrid();
 loop();
-document.getElementById('app').addEventListener('click',()=>{if(ac.state==='suspended')ac.resume();});
+// Click on the viz canvas area toggles play/stop
+document.getElementById('fireWrap').addEventListener('click',()=>{
+  if(ac.state==='suspended')ac.resume();
+  document.getElementById('playBtn').click();
+});
+
+// Spacebar toggles play/stop from anywhere (guard against firing inside text inputs)
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){
+    e.preventDefault();
+    if(ac.state==='suspended')ac.resume();
+    document.getElementById('playBtn').click();
+  }
+});
 </script>
 </body>
 </html>
