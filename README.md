@@ -2,20 +2,21 @@
 
 A browser-based audio visualizer + drum sequencer, built as a prototype-to-production teaching project.
 
-Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualizer by Kevin "Zaph" Burfitt.
+Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualizer by Kevin "Zaph" Burfitt. Cthugha's engine was feedback-based — pixel translation tables and palette rotation — a lineage that continues directly into the upcoming Spiral view.
+
 ## Live demo
 
-**[▶ Launch Signal2Noise AudioViz v8](https://meatpopsci1972.github.io/Signal2Noise_AudioViz/)**
+**[▶ Launch Signal2Noise AudioViz](https://meatpopsci1972.github.io/Signal2Noise_AudioViz/)**
 
 Hosted via GitHub Pages. Click play, then try a preset — no install, no build step.
-
 
 ---
 
 ## What it does
 
 - **16-channel drum sequencer** — synthesized drums via Web Audio API, swing, 16/32 step modes
-- **Fire visualizer** — cellular automaton pixel engine, each channel burns its own frequency column
+- **View system (new in v9)** — tab bar of visualizer views built on a Renderer strategy contract
+- **Alpha view** — the original fire engine: cellular automaton pixels, each channel burns its own frequency column
 - **6 VFX types per channel** — fire, strobe rings, balloons, sparkles, fireworks (googly-eyed), animorphic creatures
 - **Animorphic creatures** — persistent bezier blobs that walk a mountain silhouette, pulse on beat, blink, open their mouths
 - **Mic sampler + preset builder** — record audio, onset detection + spectral centroid classifier auto-builds a drum pattern
@@ -29,10 +30,14 @@ Hosted via GitHub Pages. Click play, then try a preset — no install, no build 
 ```
 Signal2Noise_AudioViz/
 ├── README.md                          ← this file
+├── HANDOFF.md                         ← session continuity: state, contract, backlog
+├── index.html                         ← redirect to current version
 ├── v8/
-│   └── signal2noise_v8.html           ← current working prototype (v8)
+│   └── signal2noise_v8.html           ← frozen baseline (pre-refactor)
+├── v9/
+│   └── signal2noise_v9.html           ← current: renderer extraction + view tabs
 └── architecture/
-    └── architecture_review.html       ← GoF / SOLID / test gap analysis
+    └── architecture_review.html       ← GoF / SOLID / test gap analysis (v8 rubric)
 ```
 
 ---
@@ -48,73 +53,70 @@ Signal2Noise_AudioViz/
 | v5 | Mic sampler + onset detection preset builder |
 | v6 | **Bug fix:** preset switching — 5 scheduler/state bugs found and fixed via Node.js simulation |
 | v7 | **Bug fix:** fire visualization — analyser stride bug, per-channel direct heat injection, spectral centroid classifier |
-| v8 | 6 VFX types per channel (pills UI), animorphic creatures, mountain silhouette, fireworks with googly eyes |
+| v8 | 6 VFX types per channel (pills UI), animorphic creatures, mountain silhouette, fireworks with googly eyes. **Frozen as pre-refactor baseline.** |
+| v9 step 1 | **Refactor:** Renderer contract + EventBus. `trigViz()` deleted; all visual state moved into `createAlphaRenderer()`; globals 21 → 12; view tab bar added. Validated headless via Node.js lifecycle simulation. Behavior identical to v8 by contract. |
 
 ---
 
-## Architecture analysis (pre-refactor baseline)
+## Architecture
 
-Full analysis is in [`architecture/architecture_review.html`](architecture/architecture_review.html).
+The v8 baseline analysis lives in [`architecture/architecture_review.html`](architecture/architecture_review.html) — 10 subsystems, 21 globals, 5 SOLID violations, 8 prioritized GoF patterns, 22 missing tests. It is the rubric v9 is measured against.
 
-### Summary
+### v9 refactor progress
 
-**10 subsystems, 21 global variables, god-object script architecture.**
+| Finding | Status |
+|---------|--------|
+| Strategy — renderer side | ✅ step 1: `createAlphaRenderer()` behind init/onTrigger/tick/dispose |
+| Observer / EventBus | ✅ step 1: scheduler emits `trigger`; `trigViz()` deleted |
+| Strategy — synth side | ⬜ planned (FM synth track) |
+| Template Method — unified VFX lifecycle | ◐ partially absorbed by the renderer contract; revisit inside Alpha |
+| Command — preset actions + undo | ⬜ planned |
+| Facade — injectable interfaces for tests | ◐ frame-object injection exists; formalize with the test pass |
+| 22 missing tests | ⬜ Node simulation scaffolding exists; tests not yet written |
+| State machines — sequencer + sampler | ⬜ planned |
 
-The code works well as a prototype but has clear production gaps:
+### View roadmap
 
-| Issue | Detail |
-|-------|--------|
-| Single Responsibility | `trigViz()` has 7 responsibilities |
-| Open/Closed | New VFX type = 4 files touched |
-| Dependency Inversion | Scheduler calls all subsystems by name |
-| No unit tests | 22 identified missing tests |
-| Mixed object lifecycles | `vfxObjs`, `balloons`, `creatures` in 3 separate loops |
+| View | Status | Core idea |
+|------|--------|-----------|
+| alpha | ✅ shipped (v9 step 1) | Cthugha-lineage fire + VFX + creatures (the v8 look) |
+| spiral | next | Feedback buffer with pixel ghosting — no clear, translucent fade + rotate |
+| sand | planned | Particle deposition; channels pour colored grains, the pile is the song's history |
+| organic | planned | Metaballs; channel blobs grow on triggers and absorb each other |
+| galactic | planned | Softened n-body; mass centers per channel group, triggers add mass and velocity |
 
-### GoF pattern opportunities (prioritized)
+All views consume the same inputs — per-channel trigger events + a per-frame spectrum — which is exactly what the Renderer contract formalizes.
 
-| # | Pattern | Why |
-|---|---------|-----|
-| 1 | **Strategy** | Kills `synth()` switch + `vfxTick()` if/else. New type = 1 file. |
-| 2 | **Observer / EventBus** | Deletes `trigViz()`. Scheduler decoupled from visuals. |
-| 3 | **Template Method** | Unifies 3 VFX loops. One lifecycle contract. |
-| 4 | **Command** | Preset actions become typed objects. Undo/redo free. |
-| 5 | **Facade** | Enables unit testing each subsystem in isolation. |
-| 6 | **State Machine** | Explicit sequencer + sampler state transitions. |
-| 7 | **Object Pool** | GC pressure at high intensity. Defer until felt. |
-| 8 | **Builder** | Preset construction with validation. Nice-to-have. |
+### Sound roadmap
+
+FM synthesis controls (separate synth panel): two-operator FM voices — modulator → gain (index) → carrier frequency — with ratio / index / decay dials. Requires the synth-side Strategy refactor first.
 
 ---
 
 ## Prototype-to-production teaching notes
 
-This project deliberately preserves the full iterative history — bugs found, tests written after the fact, architectural debt identified before refactoring. The intent is to show:
+This project deliberately preserves its full iterative history — bugs found, tests written after the fact, architectural debt identified before refactoring. The distilled discipline, and the prompts that drove each phase, now live in [`HANDOFF.md`](HANDOFF.md) alongside the operational state. The short version:
 
 1. **Rapid prototyping is valid** — the fire engine, sequencer, and VFX system were all built fast and flat
-2. **Validation before production** — 5 real bugs caught by simulating the state machine in Node.js *before* shipping
-3. **Architecture review as a checkpoint** — identifying GoF gaps and SOLID violations before committing to a refactor
-4. **Commit before refactor** — this snapshot is the baseline; v9 will apply the patterns and the diff tells the story
+2. **Validation before production** — real bugs caught by simulating logic in Node.js *before* shipping (5 in v6, 3 pre-baseline, lifecycle seams in v9)
+3. **Architecture review as a checkpoint** — GoF gaps and SOLID violations identified before committing to a refactor
+4. **Commit before refactor** — v8 is the frozen before-state; the v8→v9 diff *is* the teaching material:
+
+```
+git diff v8-baseline..v9-step1
+```
 
 ---
 
 ## Running it
 
-Open `v8/signal2noise_v8.html` directly in any modern browser. No build step, no dependencies.
+Open `v9/signal2noise_v9.html` directly in any modern browser. No build step, no dependencies. (`v8/signal2noise_v8.html` remains as the frozen baseline for diffing.)
 
 Click the visualizer first to unlock the AudioContext, then hit **play** or click a preset.
 
 For mic input / sampler: click **arm mic** and grant browser microphone permission.
 
----
-
-## v9 refactor plan (upcoming)
-
-- [ ] Strategy pattern — synth map + VFX update map
-- [ ] EventBus — decouple scheduler from all visual subsystems
-- [ ] Template Method — unified VFX lifecycle loop
-- [ ] Command pattern — preset actions + undo stack
-- [ ] Facade — injectable interfaces for unit testing
-- [ ] Write the 22 identified missing tests
-- [ ] State machines for sequencer + sampler
+Clicking the active view tab re-runs the renderer's dispose→init cycle — a built-in lifecycle self-test.
 
 ---
 
