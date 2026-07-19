@@ -29,15 +29,27 @@ input[type=range]{accent-color:#f60}
 .preset.danger{color:#f64;border-color:#3a1a0a}.preset.danger:hover{color:#f96;border-color:#f64}
 #grid{overflow-y:auto;max-height:200px;padding:2px 6px}
 .ch{display:flex;align-items:center;margin-bottom:2px;gap:0}
-.chName{width:44px;font-size:8px;color:#555;text-align:right;padding-right:5px;flex-shrink:0;white-space:nowrap}
+.chName{width:44px;font-size:8px;color:#555;text-align:right;padding-right:5px;flex-shrink:0;white-space:nowrap;cursor:pointer;border-radius:2px;transition:color .1s,background .1s}
+.chName:hover{color:#fa0}
+.chName.sel{color:#fa0;background:#1a1000}
+.chName.intOff{opacity:.4}
 .steps{display:flex;gap:2px;flex:1}
 .step{flex:1;max-width:26px;height:18px;border-radius:2px;border:1px solid #161616;background:#0c0c0c;cursor:pointer}
 .step:hover{border-color:#2a2a2a}.step.on{border-color:#666}.step.cur{border-color:#fa0!important}.step.on.cur{background:#fa0!important;border-color:#fca!important}
 .sep{width:3px;flex-shrink:0}
-.chvol{width:32px;flex-shrink:0;margin-left:3px}
-.vfx-pills{display:flex;gap:2px;flex-shrink:0;margin-left:4px;flex-wrap:wrap;max-width:130px}
 .pill{font-size:7px;padding:1px 4px;border-radius:2px;border:1px solid #1e1e1e;background:#0a0a0a;color:#333;cursor:pointer;white-space:nowrap;user-select:none}
-.pill:hover{border-color:#444;color:#666}.pill.on{color:#000;border-color:transparent}
+.pill:hover{border-color:#444;color:#666}.pill.on{color:#000;border-color:transparent}.pill.half{color:#000;border-color:#444}
+/* ── Channel strip (v9 step 4): one control set for the selected channels ── */
+#chanStrip{display:flex;gap:5px;align-items:center;flex-wrap:wrap;padding:5px 9px;background:#040404;border-bottom:1px solid #0f0f0f}
+#chanStrip label{color:#2a2a2a;font-size:9px}
+.cbtn{background:#090909;color:#555;border:1px solid #161616;border-radius:2px;font-size:9px;padding:3px 7px;cursor:pointer;font-family:monospace}
+.cbtn:hover{color:#fa0;border-color:#fa0}
+#stripPills{display:flex;gap:3px;flex-wrap:wrap}
+#stripPills .pill,#stripInt{font-size:9px;padding:2px 6px}
+#stripVol{width:62px}
+#stripHint{color:#2a2a2a;font-size:9px;display:none}
+#chanStrip.idle #stripHint{display:inline}
+#chanStrip.idle #stripPills,#chanStrip.idle .tctl,#chanStrip.idle #stripInt{opacity:.35;pointer-events:none}
 #vizBar{height:22px;background:#000;border-top:1px solid #080808;display:flex;align-items:flex-end;gap:1px;padding:1px 6px}
 .vcol{flex:1;border-radius:1px 1px 0 0;min-height:1px}
 #samplerPanel{background:#030303;border-top:1px solid #161616;padding:6px 9px}
@@ -60,6 +72,13 @@ input[type=range]{accent-color:#f60}
 #title-bar{padding:5px 9px;background:#030303;border-bottom:1px solid #0f0f0f;display:flex;align-items:center;gap:8px}
 #title-bar span{color:#fa0;font-size:11px;font-weight:500;letter-spacing:1px}
 #title-bar .ver{color:#333;font-size:9px}
+/* ── Tool tray (v9 step 3) ── */
+#trayBar{display:flex;align-items:center;gap:6px;padding:2px 9px;background:#030303;border-bottom:1px solid #0f0f0f}
+#trayBar span{color:#2a2a2a;font-size:9px;margin-right:auto}
+#trayToggle{background:#090909;color:#555;border:1px solid #161616;border-radius:2px;font-size:9px;padding:2px 8px;cursor:pointer;font-family:monospace;transition:color .1s,border-color .1s}
+#trayToggle:hover{color:#fa0;border-color:#fa0}
+#tray.closed{display:none}
+#app.theater{max-width:none}
 /* ── View tab bar (new in v9) ── */
 #viewTabs{display:flex;gap:4px;align-items:center;padding:4px 9px;background:#040404;border-bottom:1px solid #0f0f0f}
 #viewTabs label{color:#2a2a2a;font-size:9px}
@@ -70,9 +89,11 @@ input[type=range]{accent-color:#f60}
 </head>
 <body style="background:#111;padding:1rem">
 <div id="app">
-<div id="title-bar"><span>SIGNAL2NOISE AUDIOVIZ</span><span class="ver">v9 &middot; step 1: renderer extraction</span></div>
+<div id="title-bar"><span>SIGNAL2NOISE AUDIOVIZ</span><span class="ver">v9 &middot; step 4: channel strip</span></div>
 <div id="viewTabs"><label>view:</label></div>
 <div id="fireWrap"><canvas id="cv"></canvas><canvas id="vfx"></canvas></div>
+<div id="trayBar"><span>tools</span><button id="trayToggle">&#9662; hide</button></div>
+<div id="tray">
 <div id="transport">
   <button id="playBtn">&#9654; play</button>
   <div class="tctl"><label>bpm</label><input type="range" id="bpmSlider" min="60" max="200" value="90" step="1"><span class="tval" id="bpmVal">90</span></div>
@@ -91,6 +112,15 @@ input[type=range]{accent-color:#f60}
   <div class="preset util" data-p="__random">random</div>
   <div class="preset danger" data-p="__clear">clear</div>
 </div>
+<div id="chanStrip" class="idle">
+  <label>channels:</label>
+  <div class="cbtn" id="selAll">all</div>
+  <div class="cbtn" id="selNone">none</div>
+  <div id="stripPills"></div>
+  <div class="tctl"><label>vol</label><input type="range" id="stripVol" min="0" max="1" step="0.01" value="0.7"></div>
+  <div class="pill" id="stripInt">&#9889;int</div>
+  <span id="stripHint">click channel names to select</span>
+</div>
 <div id="grid"></div>
 <div id="vizBar"></div>
 <div id="samplerPanel">
@@ -105,9 +135,10 @@ input[type=range]{accent-color:#f60}
   <div id="sampleSlots"></div>
 </div>
 </div>
+</div>
 
 <script>
-// Signal2Noise AudioViz v9 — step 1: renderer extraction
+// Signal2Noise AudioViz v9 — step 2: spiral view (step 1: renderer extraction)
 //
 // What changed vs the v8 baseline (architecture/architecture_review.html):
 //   1. EventBus            — scheduler no longer calls visual subsystems by name.
@@ -177,6 +208,8 @@ const VFX_DEFS=[
 ];
 
 let chanVfx=CHANNELS.map(()=>new Set(['fire']));
+let chanIntensity=CHANNELS.map(()=>true);   // per-channel: rides the intensity slider?
+const selChans=new Set();                    // channel selection (editing tool, transient)
 let numSteps=16;
 let steps=CHANNELS.map(()=>new Array(32).fill(0));
 let chanVols=CHANNELS.map(c=>c.vol);
@@ -208,8 +241,12 @@ const bus={
 //                   Build all internal state fresh. Never cache env
 //                   outside init's closure reach.
 //   onTrigger(e)    e = {ci, cx, xFrac, width, intensity, vol, col,
-//                        vfxSet, t} — one sequencer hit, timing already
+//                        vfxSet, viz, t} — one sequencer hit, timing already
 //                   compensated by the dispatcher. React or ignore.
+//                   e.viz = effective intensity for THIS channel:
+//                   vizIntensity if the channel participates, else 1.0.
+//                   Use e.viz for trigger-born visuals; the global
+//                   vizIntensity remains for ambient/whole-frame effects.
 //   tick(frame)     frame = {seqFreq, micLevel, t} — draw exactly one
 //                   frame. seqFreq is the shared analyser byte array
 //                   (read once per frame by the app loop). Renderers
@@ -231,9 +268,10 @@ function createAlphaRenderer(){
   const BOOM_WORDS=['POW!','ZORP!','KAPOW!','BLAMMO!','WHAM!','ZAP!'];
   const PAL_FIRE=v=>[Math.min(255,v*3),Math.max(0,Math.min(255,v*3-255)),Math.max(0,Math.min(255,v*3-510))];
 
-  // ── Spawners (private) ──
-  function addHeat(xf,w,intensity){activeHeat.push({xf,w,intensity:intensity*255*vizIntensity,life:1,decay:.05+Math.random()*.04});}
-  function spawnStrobe(cx,col,vol){if(vfxObjs.length>MAX_OBJS)return;vfxObjs.push({kind:'ring',x:cx,y:FH,r:4,maxR:FW*.65,spd:8+vol*4,alpha:.9*vizIntensity,col,lw:2.5,born:Date.now()});vfxObjs.push({kind:'flash',alpha:.35*vizIntensity*vol,col,decay:.08,born:Date.now()});}
+  // ── Spawners (private). k = intensity scale: per-channel e.viz for
+  //    trigger-born visuals, defaults to global vizIntensity for ambient. ──
+  function addHeat(xf,w,intensity,k){if(k===undefined)k=vizIntensity;activeHeat.push({xf,w,intensity:intensity*255*k,life:1,decay:.05+Math.random()*.04});}
+  function spawnStrobe(cx,col,vol,k){if(k===undefined)k=vizIntensity;if(vfxObjs.length>MAX_OBJS)return;vfxObjs.push({kind:'ring',x:cx,y:FH,r:4,maxR:FW*.65,spd:8+vol*4,alpha:.9*k,col,lw:2.5,born:Date.now()});vfxObjs.push({kind:'flash',alpha:.35*k*vol,col,decay:.08,born:Date.now()});}
   function spawnSparkles(cx,col,vol){const n=Math.floor(14+vol*10);for(let i=0;i<n&&vfxObjs.length<MAX_OBJS;i++){const a=(-Math.PI*.5)+(Math.random()-.5)*Math.PI*.9,spd=2+Math.random()*4*vol;vfxObjs.push({kind:'sparkle',x:cx+(Math.random()-.5)*20,y:FH-10,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,alpha:1,col,size:1.5+Math.random()*2,decay:.018+Math.random()*.01,trail:[],born:Date.now()});}}
   function spawnFirework(cx,col){if(vfxObjs.length>MAX_OBJS)return;vfxObjs.push({kind:'rocket',x:cx+(Math.random()-.5)*30,y:FH,vy:-(4+Math.random()*3),wobble:0,wobbleV:(Math.random()-.5)*.15,col,born:Date.now()});}
   function triggerBalloon(ci,cx,col){
@@ -318,9 +356,9 @@ function createAlphaRenderer(){
       });
     },
     onTrigger(e){
-      const{ci,cx,xFrac,width,intensity,vol,col,vfxSet}=e;
-      if(vfxSet.has('fire')){addHeat(xFrac,width,intensity*vol);addHeat(xFrac+(Math.random()-.5)*.06,width*.5,intensity*.4*vol);}
-      if(vfxSet.has('strobe'))spawnStrobe(cx,col,vol);
+      const{ci,cx,xFrac,width,intensity,vol,col,vfxSet,viz}=e;
+      if(vfxSet.has('fire')){addHeat(xFrac,width,intensity*vol,viz);addHeat(xFrac+(Math.random()-.5)*.06,width*.5,intensity*.4*vol,viz);}
+      if(vfxSet.has('strobe'))spawnStrobe(cx,col,vol,viz);
       if(vfxSet.has('balloon'))triggerBalloon(ci,cx,col);
       if(vfxSet.has('sparkle'))spawnSparkles(cx,col,vol);
       if(vfxSet.has('firework'))spawnFirework(cx,col);
@@ -337,6 +375,76 @@ function createAlphaRenderer(){
   };
 }
 
+// ── Spiral — Cthugha-lineage feedback engine: rotate/zoom echo + ghost fade ──
+// Where Cthugha used pixel translation tables + palette rotation, this uses a
+// Canvas 2D self-feedback pass (copy → rotate/zoom → redraw) + a translucent
+// fade rect. Fresh pixels each frame: a spectrum arm along an archimedean
+// spiral, plus per-trigger comets and center rings. The feedback smears them
+// into trails — the "pixel ghosting" IS the feedback loop.
+// NOTE: Spiral ignores vfxSet — the VFX pills are Alpha-specific by contract.
+function createSpiralRenderer(){
+  let ctx=null,vx=null,FW=0,FH=0;
+  let off=null,offCtx=null;   // feedback buffer (private, rebuilt on init)
+  let comets=[],phase=0;
+  const MAX_COMETS=120;
+  const AX=1.35;              // x-stretch: fills the 640×220 canvas elliptically
+
+  function bandLevel(fd,lo,hi){let s=0;const a=Math.floor(fd.length*lo),b=Math.max(a+1,Math.floor(fd.length*hi));for(let i=a;i<b;i++)s+=fd[i];return s/((b-a)*255);}
+
+  return {
+    id:'spiral',
+    init(env){
+      ctx=env.ctx;vx=env.vx;FW=env.FW;FH=env.FH;
+      off=document.createElement('canvas');off.width=FW;off.height=FH;
+      offCtx=off.getContext('2d');
+      ctx.fillStyle='#000';ctx.fillRect(0,0,FW,FH);
+      comets=[];phase=0;
+    },
+    onTrigger(e){
+      // angle from channel index; radius seeded from its frequency register
+      const a=(e.ci/16)*Math.PI*2+phase*2;
+      const r0=14+e.xFrac*40;
+      if(comets.length<MAX_COMETS)comets.push({a,r:r0,vr:.9+e.vol*1.8+e.intensity*.6,va:.010+e.vol*.012,col:e.col,size:2.2+e.vol*3.5*e.viz,life:1,decay:.006+.004*Math.random()});
+      // center pulse ring — the feedback smears it into a tunnel
+      if(comets.length<MAX_COMETS)comets.push({ring:true,r:6,vr:2.2+e.vol*2.5,col:e.col,life:.55*Math.min(1.4,e.viz),decay:.05,lw:1.5+e.vol*1.5});
+    },
+    tick(frame){
+      const fd=frame.seqFreq;
+      const bass=bandLevel(fd,0,.12),treble=bandLevel(fd,.5,1);
+      // 1) feedback pass: snapshot the field, redraw rotated + zoomed
+      offCtx.clearRect(0,0,FW,FH);offCtx.drawImage(ctx.canvas,0,0);
+      const zoom=1.004+treble*.012+frame.micLevel*.01;
+      ctx.save();
+      ctx.globalAlpha=.965;
+      ctx.translate(FW/2,FH/2);ctx.rotate(.0035+bass*.02);ctx.scale(zoom,zoom);
+      ctx.drawImage(off,-FW/2,-FH/2);
+      ctx.restore();
+      // 2) ghost fade — this alpha is the ghosting dial
+      ctx.fillStyle='rgba(0,0,0,0.045)';ctx.fillRect(0,0,FW,FH);
+      // 3) spectrum arm along an archimedean spiral
+      phase+=.006+bass*.01;
+      const cxp=FW/2,cyp=FH/2;
+      for(let b=0;b<fd.length;b+=2){
+        const v=fd[b]/255;if(v<.12)continue;
+        const t=b/fd.length,ang=phase*2+t*Math.PI*6,rad=10+t*(FH*.52);
+        const x=cxp+Math.cos(ang)*rad*AX,y=cyp+Math.sin(ang)*rad;
+        ctx.fillStyle=`hsla(${30+t*280},95%,${45+v*35}%,${(.25+v*.6)*Math.min(1,vizIntensity)})`;
+        ctx.beginPath();ctx.arc(x,y,.8+v*2.6*vizIntensity,0,Math.PI*2);ctx.fill();
+      }
+      // 4) comets + rings — fresh pixels; the feedback makes the trails
+      const live=[];
+      comets.forEach(c=>{
+        if(c.ring){ctx.globalAlpha=Math.min(1,c.life);ctx.strokeStyle=c.col;ctx.lineWidth=c.lw;ctx.beginPath();ctx.arc(cxp,cyp,c.r,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;c.r+=c.vr;c.life-=c.decay;if(c.life>.02&&c.r<FH)live.push(c);return;}
+        c.a+=c.va;c.r+=c.vr;c.life-=c.decay;
+        if(c.life>.02&&c.r<FH*.78){const x=cxp+Math.cos(c.a)*c.r*AX,y=cyp+Math.sin(c.a)*c.r;ctx.globalAlpha=Math.min(1,c.life);ctx.fillStyle=c.col;ctx.beginPath();ctx.arc(x,y,c.size,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;live.push(c);}
+      });
+      comets=live;
+      vx.clearRect(0,0,FW,FH);  // overlay canvas unused by this view
+    },
+    dispose(){comets=[];off=null;offCtx=null;ctx=null;vx=null;}
+  };
+}
+
 // ══════════════════════════════════════════════════════════════════
 // View manager + tab bar
 // Adding a view later = one entry here + one createXxxRenderer factory.
@@ -344,6 +452,7 @@ function createAlphaRenderer(){
 // ══════════════════════════════════════════════════════════════════
 const VIEWS=[
   {id:'alpha',label:'alpha',create:createAlphaRenderer},
+  {id:'spiral',label:'spiral',create:createSpiralRenderer},
 ];
 let activeView=null,unsubTrigger=null;
 
@@ -425,7 +534,7 @@ function dispatchTrigger(ci,delay){
   setTimeout(()=>{
     vizLevels[ci]=Math.min(26,vizLevels[ci]+24);
     const[xFrac,width,intensity]=CH_HEAT[ci];
-    bus.emit('trigger',{ci,xFrac,width,intensity,cx:xFrac*FW,vol:chanVols[ci],col:CHANNELS[ci].color,vfxSet:chanVfx[ci],t:Date.now()});
+    bus.emit('trigger',{ci,xFrac,width,intensity,cx:xFrac*FW,vol:chanVols[ci],col:CHANNELS[ci].color,vfxSet:chanVfx[ci],viz:chanIntensity[ci]?vizIntensity:1,t:Date.now()});
   },ms);
 }
 
@@ -440,7 +549,7 @@ function loop(){
   if(micAnalyser&&micActive){const mfd=new Uint8Array(micAnalyser.frequencyBinCount);micAnalyser.getByteFrequencyData(mfd);let me=0;for(let i=0;i<mfd.length;i++)me+=mfd[i];micLevel=me/(mfd.length*255);}
   if(activeView)activeView.tick({seqFreq:seqFreqData,micLevel,t:Date.now()});
   // Viz bar (app-level UI, shared by all views)
-  const cols=document.querySelectorAll('.vcol');vizLevels.forEach((v,i)=>{vizLevels[i]=Math.max(0,v-.9);if(cols[i])cols[i].style.height=Math.min(22,Math.round(vizLevels[i]*vizIntensity))+'px';});
+  const cols=document.querySelectorAll('.vcol');vizLevels.forEach((v,i)=>{vizLevels[i]=Math.max(0,v-.9);if(cols[i])cols[i].style.height=Math.min(22,Math.round(vizLevels[i]*(chanIntensity[i]?vizIntensity:1)))+'px';});
   requestAnimationFrame(loop);
 }
 
@@ -479,7 +588,10 @@ function buildGrid(){
   for(let i=0;i<numSteps;i++){const l=document.createElement('div');l.className='posLed';posBar.appendChild(l);}
   CHANNELS.forEach((ch,ci)=>{
     const row=document.createElement('div');row.className='ch';
-    const nm=document.createElement('div');nm.className='chName';nm.textContent=ch.name;row.appendChild(nm);
+    const nm=document.createElement('div');nm.className='chName';nm.textContent=ch.name;nm.dataset.ci=ci;
+    nm.title='click to select';
+    nm.addEventListener('click',()=>{selChans.has(ci)?selChans.delete(ci):selChans.add(ci);refreshStrip();});
+    row.appendChild(nm);
     const sd=document.createElement('div');sd.className='steps';
     for(let s=0;s<numSteps;s++){
       if(s===4||s===8||s===12){const sp=document.createElement('div');sp.className='sep';sd.appendChild(sp);}
@@ -488,14 +600,64 @@ function buildGrid(){
       btn.addEventListener('click',()=>{steps[ci][s]=steps[ci][s]?0:1;btn.classList.toggle('on',!!steps[ci][s]);btn.style.background=steps[ci][s]?ch.color+'40':'';btn.style.borderColor=steps[ci][s]?ch.color+'70':'';});
       sd.appendChild(btn);
     }
-    row.appendChild(sd);
-    const vl=document.createElement('input');vl.type='range';vl.min=0;vl.max=1;vl.step=0.01;vl.value=chanVols[ci];vl.className='chvol';vl.style.accentColor=ch.color;vl.addEventListener('input',function(){chanVols[ci]=parseFloat(this.value);});row.appendChild(vl);
-    const pills=document.createElement('div');pills.className='vfx-pills';
-    VFX_DEFS.forEach(vd=>{const p=document.createElement('div');p.className='pill'+(chanVfx[ci].has(vd.id)?' on':'');p.textContent=vd.label;if(chanVfx[ci].has(vd.id))p.style.background=vd.color+'cc';p.addEventListener('click',()=>{if(chanVfx[ci].has(vd.id)){chanVfx[ci].delete(vd.id);p.classList.remove('on');p.style.background='';}else{chanVfx[ci].add(vd.id);p.classList.add('on');p.style.background=vd.color+'cc';}});pills.appendChild(p);});
-    row.appendChild(pills);grid.appendChild(row);
+    row.appendChild(sd);grid.appendChild(row);
   });
   const vizBar=document.getElementById('vizBar');vizBar.innerHTML='';
   CHANNELS.forEach(ch=>{const c=document.createElement('div');c.className='vcol';c.style.background=ch.color;c.style.height='1px';vizBar.appendChild(c);});
+  refreshStrip();
+}
+
+// ── Channel strip: one control set applied to the selected channels ──
+// Tri-state pills: on = ALL selected have it, half = some do, off = none.
+// Two independent per-channel flags editable here: chanVfx (what a hit adds
+// to the visualization) and chanIntensity (rides the intensity slider or
+// stays at baseline 1.0). Channels NOT riding intensity show dimmed names —
+// the exception gets the marker, the default stays quiet.
+const stripPillEls={};
+(function buildStrip(){
+  const holder=document.getElementById('stripPills');
+  VFX_DEFS.forEach(vd=>{
+    const p=document.createElement('div');p.className='pill';p.textContent=vd.label;
+    p.addEventListener('click',()=>{
+      if(!selChans.size)return;
+      let n=0;selChans.forEach(ci=>{if(chanVfx[ci].has(vd.id))n++;});
+      const turnOn=n!==selChans.size;   // mixed or off → set all; full → clear all
+      selChans.forEach(ci=>{turnOn?chanVfx[ci].add(vd.id):chanVfx[ci].delete(vd.id);});
+      refreshStrip();
+    });
+    holder.appendChild(p);stripPillEls[vd.id]=p;
+  });
+  document.getElementById('selAll').addEventListener('click',()=>{CHANNELS.forEach((_,ci)=>selChans.add(ci));refreshStrip();});
+  document.getElementById('selNone').addEventListener('click',()=>{selChans.clear();refreshStrip();});
+  document.getElementById('stripVol').addEventListener('input',function(){const v=parseFloat(this.value);selChans.forEach(ci=>{chanVols[ci]=v;});});
+  document.getElementById('stripInt').addEventListener('click',()=>{
+    if(!selChans.size)return;
+    let n=0;selChans.forEach(ci=>{if(chanIntensity[ci])n++;});
+    const turnOn=n!==selChans.size;
+    selChans.forEach(ci=>{chanIntensity[ci]=turnOn;});
+    refreshStrip();
+  });
+})();
+
+function refreshStrip(){
+  const any=selChans.size>0;
+  document.getElementById('chanStrip').classList.toggle('idle',!any);
+  VFX_DEFS.forEach(vd=>{
+    const p=stripPillEls[vd.id];let n=0;selChans.forEach(ci=>{if(chanVfx[ci].has(vd.id))n++;});
+    const full=any&&n===selChans.size,half=n>0&&!full;
+    p.classList.toggle('on',full);p.classList.toggle('half',half);
+    p.style.background=full?vd.color+'cc':half?vd.color+'55':'';
+  });
+  let ni=0;selChans.forEach(ci=>{if(chanIntensity[ci])ni++;});
+  const ip=document.getElementById('stripInt'),iFull=any&&ni===selChans.size,iHalf=ni>0&&!iFull;
+  ip.classList.toggle('on',iFull);ip.classList.toggle('half',iHalf);
+  ip.style.background=iFull?'#fa0':iHalf?'#fa05':'';
+  if(any){let s=0;selChans.forEach(ci=>s+=chanVols[ci]);document.getElementById('stripVol').value=(s/selChans.size).toFixed(2);}
+  document.querySelectorAll('.chName').forEach(el=>{
+    const ci=+el.dataset.ci;
+    el.classList.toggle('sel',selChans.has(ci));
+    el.classList.toggle('intOff',!chanIntensity[ci]);
+  });
 }
 
 // ── Sampler / mic input ──
@@ -554,6 +716,21 @@ function addSampleSlot(name,buf){
   document.getElementById('sampleSlots').appendChild(slot);
 }
 buildBtn.addEventListener('click',()=>{if(!recBuffer){document.getElementById('samplerStatus').textContent='record something first';return;}const name=document.getElementById('presetNameIn').value.trim()||('smpl-'+Date.now().toString(36).slice(-4));analyzeAndBuildPreset(recBuffer,name);});
+
+// ── Tool tray: hide the tool sections, widen the app for more viz pixels ──
+const trayEl=document.getElementById('tray'),trayToggle=document.getElementById('trayToggle');
+let trayOpen=true;
+function setTray(open){
+  trayOpen=open;
+  trayEl.classList.toggle('closed',!open);
+  document.getElementById('app').classList.toggle('theater',!open);
+  trayToggle.innerHTML=open?'&#9662; hide':'&#9652; show';
+}
+trayToggle.addEventListener('click',()=>setTray(!trayOpen));
+// 'h' toggles the tray from anywhere (same input guard as spacebar)
+document.addEventListener('keydown',e=>{
+  if(e.key==='h'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA')setTray(!trayOpen);
+});
 
 // ── Init ──
 switchView('alpha');

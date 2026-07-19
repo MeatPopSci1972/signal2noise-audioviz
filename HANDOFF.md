@@ -8,11 +8,22 @@
 
 ## 1. Current state
 
-- **Current version:** `v9/signal2noise_v9.html` — v9 step 1 (renderer extraction)
+- **Current version:** `v9/signal2noise_v9.html` — v9 step 4 (channel strip)
+  - step 1 renderer extraction: ✅ committed, checkpoint passed
+  - step 2 spiral view: ✅ checkpoint passed (feedback engine, bass→rotation, treble/mic→zoom)
+  - step 3 tool tray: gate passed, ⬜ browser checkpoint pending
+  - step 4 channel strip + per-channel intensity: gate passed, ⬜ browser checkpoint pending
 - **Frozen baseline:** `v8/signal2noise_v8.html` — do not modify; it exists so `git diff` tells the refactor story
 - **Behavior contract for step 1:** visually and audibly identical to v8
 - **Validation done:** headless Node.js simulation (stubbed DOM/Canvas/WebAudio) — load+init, dispose→init lifecycle, dispatch→bus→onTrigger→tick full frame, all 6 VFX paths incl. balloon-pop over 120 frames, and exactly **1** trigger listener on the bus after repeated view switches (no leak)
-- **Checkpoint status:** ⬜ human side-by-side verification v8 vs v9 pending (see §5 backlog, item 1)
+- **Checkpoint status:** step 3 (tray) pending; steps 1–2 passed in browser
+
+### Known issues
+
+- **Mic "arm mic" permission error** (observed after v9 step 1 checkpoint). Sampler
+  code is a verbatim move from v8, so this is almost certainly environmental —
+  browser permission previously denied for the origin, or OS mic privacy settings.
+  Not a current priority. Revisit before any sampler work.
 
 ## 2. File map
 
@@ -34,8 +45,13 @@ validate before optimize, surgical edits, visible errors over graceful degradati
 
 ```
 init(env)       env = {ctx, vx, FW, FH}. Build ALL internal state fresh.
-onTrigger(e)    e = {ci, cx, xFrac, width, intensity, vol, col, vfxSet, t}
+onTrigger(e)    e = {ci, cx, xFrac, width, intensity, vol, col, vfxSet, viz, t}
                 One sequencer hit, timing already compensated. React or ignore.
+                e.viz = per-channel effective intensity: vizIntensity if the
+                channel participates (chanIntensity[ci]), else 1.0. Use e.viz
+                for trigger-born visuals; global vizIntensity stays for
+                ambient/whole-frame effects (Alpha's spectrum heat, Spiral's
+                spectrum arm, creature render scale).
 tick(frame)     frame = {seqFreq, micLevel, t}. Draw exactly one frame.
 dispose()       Release everything. Manager may init a different renderer
                 on the same canvases immediately after.
@@ -81,21 +97,37 @@ dispose()       Release everything. Manager may init a different renderer
 
 ## 5. Backlog (ordered)
 
-1. ⬜ **Checkpoint v9 step 1** — v8 vs v9 side by side; preset switch; mic record;
-   click active tab mid-playback (fire resets, music never stutters)
-2. ⬜ Commit step 1; update `index.html` redirect → v9
-3. ⬜ **Spiral view** — feedback buffer + pixel ghosting (translucent fade + rotate,
-   never clear). Smallest view; stress-tests `dispose()`. Checkpoint: switch
-   Alpha ↔ Spiral repeatedly, zero ghost state.
-4. ⬜ Sand view — particle deposition, per-channel pour points, heightmap + angle of repose
-5. ⬜ Organic view — metaballs via radial gradients + threshold pass
-6. ⬜ Galactic view — softened n-body, triggers add mass/velocity
-7. ⬜ Synth-side Strategy — `synth()` switch → voice map (arch review finding)
-8. ⬜ FM voices + synth panel — 2-op FM (mod → gain(index) → carrier.freq),
-   dials: ratio / index / decay
-9. ⬜ Write the 22 missing tests (arch review) on the Node-simulation scaffolding
-10. ⬜ Command pattern — preset actions + undo stack
-11. ⬜ State machines — sequencer + sampler
+1. ✅ Checkpoint v9 step 1 — passed (boom matched side by side)
+2. ✅ Commit step 1; `index.html` redirect → v9 — done
+3. ✅ **Spiral view** — shipped + checkpoint passed
+4. ⬜ **Tool tray** (step 3) — built, gate passed; browser checkpoint pending.
+   `▾ hide` collapses transport/presets/grid/vizBar/sampler; app widens
+   (theater mode) so the viz gets more pixels. `h` key toggles.
+5. ⬜ **Channel strip** (step 4) — built, gate passed; browser checkpoint
+   pending. Click channel NAMES to select (amber); all/none buttons; one
+   tri-state pill set + volume slider + ⚡int toggle apply to the selection.
+   Per-row pills and volume sliders removed. chanIntensity[] flags which
+   channels ride the intensity slider; excluded channels show dimmed names
+   and pin at baseline 1.0 (payload e.viz). Tri-state rule: mixed/off →
+   fill all selected, full → clear all selected.
+6. ⬜ Sand view — particle deposition, per-channel pour points, heightmap + angle of repose
+7. ⬜ Organic view — metaballs via radial gradients + threshold pass
+8. ⬜ Galactic view — softened n-body, triggers add mass/velocity
+9. ⬜ Synth-side Strategy — `synth()` switch → voice map (arch review finding)
+10. ⬜ FM voices + synth panel — 2-op FM (mod → gain(index) → carrier.freq),
+    dials: ratio / index / decay
+11. ⬜ Write the 22 missing tests (arch review) on the Node-simulation scaffolding
+12. ⬜ Command pattern — preset actions + undo stack
+13. ⬜ State machines — sequencer + sampler
+
+### 5a. Channel strip — decision record (resolved)
+
+Selection is the editing TOOL (transient); it sets two INDEPENDENT per-channel
+flags, which may overlap freely:
+- chanVfx[ci] — which elements a hit adds to the visualization (Alpha pills)
+- chanIntensity[ci] — whether the channel rides the global intensity slider
+Exception gets the marker: intensity-excluded names render dimmed; the
+all-on default stays visually quiet. No arm-and-fire mechanics (proto2prod).
 
 ## 6. Development discipline (distilled from the v1–v9 history)
 
