@@ -113,6 +113,7 @@ input[type=range]{accent-color:#f60}
   <div class="tctl"><label>swing</label><input type="range" id="swingSlider" min="0" max="66" value="10" step="1"><span class="tval" id="swgVal">10%</span></div>
   <div class="tctl"><label>steps</label><select id="stepsEl"><option value="16" selected>16</option><option value="32">32</option></select></div>
   <div class="tctl"><label>intensity</label><input type="range" id="intensitySlider" min="0.2" max="3.0" value="1.0" step="0.1"><span class="tval" id="intensityVal">1.0</span></div>
+  <div class="tctl"><label>lyric</label><input type="text" id="lyricIn" placeholder="type words/lyrics..." value="SIGNAL // NOISE" style="width:150px"></div>
   <div id="posBar"></div>
 </div>
 <div id="presetBar">
@@ -186,7 +187,9 @@ seqAnalyser.fftSize=512;seqAnalyser.smoothingTimeConstant=0.4;
 const seqFreqData=new Uint8Array(seqAnalyser.frequencyBinCount);
 masterGain.connect(seqAnalyser);
 let vizIntensity=1.0;
+let lyricText='SIGNAL // NOISE';   // lyric view text (edited via the transport input)
 document.getElementById('intensitySlider').addEventListener('input',function(){vizIntensity=parseFloat(this.value);document.getElementById('intensityVal').textContent=vizIntensity.toFixed(1);});
+document.getElementById('lyricIn').addEventListener('input',function(){lyricText=this.value;});
 
 // Per-channel fire heat map: [xFrac, width, intensity]
 // xFrac maps frequency register to canvas x (low=left, high=right)
@@ -473,6 +476,92 @@ function createSpiralRenderer(){
   };
 }
 
+// ── createLyricRenderer: scrolling kinetic-typography view ──
+// Contract: init(env)/onTrigger(e)/tick(frame)/dispose(). Draws on ctx, clears vx.
+function createLyricRenderer(){
+  let ctx=null,vx=null,FW=0,FH=0;
+  let scrollX=0, letters=[], laidText=null, totalW=0;
+  let bassEnv=0, punch=0, t0=0, lastCol='#ff6600';
+  const SPEED=1.6;            // base scroll px/frame
+  const BASE=46;             // base glyph size
+  const FOCUS_EXTRA=46;      // extra px the focus word can gain
+  const FOCUS_X=0.40;        // focus line, fraction of width
+
+  function bandLevel(fd,lo,hi){let s=0;const a=Math.floor(fd.length*lo),b=Math.max(a+1,Math.floor(fd.length*hi));for(let i=a;i<b;i++)s+=fd[i];return s/((b-a)*255);}
+
+  function layout(text){
+    ctx.font=`900 ${BASE}px system-ui, sans-serif`;
+    letters=[]; let x=0, wi=0;
+    const toks=text.split(/(\s+)/);           // keep whitespace tokens
+    const sp=ctx.measureText(' ').width;
+    toks.forEach(tok=>{
+      if(tok===''){return;}
+      if(/^\s+$/.test(tok)){x+=sp*tok.length; wi++; return;}
+      for(const ch of tok){const w=ctx.measureText(ch).width; letters.push({ch,x,w,wi}); x+=w;}
+      x+=sp*0.4; wi++;
+    });
+    totalW=x; laidText=text;
+  }
+
+  return {
+    id:'lyric',
+    init(env){
+      ctx=env.ctx;vx=env.vx;FW=env.FW;FH=env.FH;
+      ctx.fillStyle='#000';ctx.fillRect(0,0,FW,FH);
+      scrollX=FW; bassEnv=0; punch=0; laidText=null; t0=Date.now();
+    },
+    onTrigger(e){
+      const lowHit = e.xFrac<0.35 ? 1 : 0.4;   // bass/low channels punch hardest
+      punch=Math.min(1.6, punch + (0.5+e.vol)*lowHit*(e.viz||1));
+      if(e.col) lastCol=e.col;
+    },
+    tick(frame){
+      const fd=frame.seqFreq;
+      const txt=(typeof lyricText==='string' && lyricText.trim())?lyricText:'SIGNAL // NOISE ';
+      if(txt!==laidText) layout(txt);
+
+      const bass=bandLevel(fd,0,.12);
+      const target=Math.min(1.5, bass*1.4 + punch);
+      bassEnv += (target>bassEnv?0.55:0.10)*(target-bassEnv);   // fast attack / slow release
+      punch*=0.86;
+
+      ctx.fillStyle='rgba(0,0,0,0.30)';ctx.fillRect(0,0,FW,FH);  // motion trail
+
+      scrollX -= SPEED + bassEnv*1.2;
+      if(scrollX < -totalW) scrollX = FW;
+
+      const midY=FH*0.5, tSec=(Date.now()-t0)/1000, focusPx=FW*FOCUS_X;
+      ctx.textBaseline='middle'; ctx.textAlign='center';
+
+      letters.forEach((L,i)=>{
+        const gx=scrollX + L.x + L.w/2;
+        if(gx<-60||gx>FW+60) return;                          // cull offscreen
+        const focus=Math.max(0, 1 - Math.abs(gx-focusPx)/(FW*0.22));
+        const size=BASE*(1 + bassEnv*0.10 + focus*bassEnv*(FOCUS_EXTRA/BASE));
+        const vibe=Math.sin(tSec*4 + L.wi*0.7)*4*bassEnv;      // whole-line vibe
+        const wave=Math.sin(tSec*10 - i*0.5)*focus*bassEnv*22; // focus traveling wave
+        const y=midY + vibe - wave;
+        const hue=(200 + L.x*0.25 + tSec*30)%360;
+        const light=48 + bassEnv*22 + focus*20;
+        const alpha=(0.35 + bassEnv*0.4 + focus*0.45)*Math.min(1,vizIntensity);
+        ctx.save();
+        ctx.font=`900 ${size}px system-ui, sans-serif`;
+        if(focus>0.25){
+          ctx.shadowColor=lastCol; ctx.shadowBlur=18*focus*(0.5+bassEnv);
+          ctx.fillStyle=`hsla(${hue},100%,${Math.min(85,light+15)}%,${Math.min(1,alpha+0.3)})`;
+        }else{
+          ctx.fillStyle=`hsla(${hue},90%,${light}%,${alpha})`;
+        }
+        ctx.fillText(L.ch, gx, y);
+        ctx.restore();
+      });
+
+      vx.clearRect(0,0,FW,FH);
+    },
+    dispose(){letters=[];laidText=null;ctx=null;vx=null;}
+  };
+}
+
 // ══════════════════════════════════════════════════════════════════
 // View manager + tab bar
 // Adding a view later = one entry here + one createXxxRenderer factory.
@@ -481,6 +570,7 @@ function createSpiralRenderer(){
 const VIEWS=[
   {id:'alpha',label:'alpha',create:createAlphaRenderer},
   {id:'spiral',label:'spiral',create:createSpiralRenderer},
+  {id:'lyric',label:'lyric',create:createLyricRenderer},
 ];
 let activeView=null,unsubTrigger=null;
 
