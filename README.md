@@ -2,15 +2,11 @@
 
 A browser-based audio visualizer + drum sequencer, built as a prototype-to-production teaching project.
 
-Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualizer by Kevin "Zaph" Burfitt. Cthugha's engine was feedback-based — pixel translation tables and palette rotation — a lineage that continues directly into the upcoming Spiral view.
+Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualizer by Kevin "Zaph" Burfitt. Cthugha's engine was feedback-based — pixel translation tables and palette rotation.
 
 ## Live demo
 
-**[▶ Launch Signal2Noise AudioViz](https://meatpopsci1972.github.io/Signal2Noise_AudioViz/signal2noise-audioviz.html)**
-
-Hosted via GitHub Pages. Click play, then try a preset — no install, no build step.
-
-**[⬇ Download the latest release](https://github.com/MeatPopSci1972/Signal2Noise_AudioViz/releases/latest)** — a single self-contained HTML file. Save it, open it in a browser, done.
+**[▶ Launch Signal2Noise AudioViz](https://meatpopsci1972.github.io/signal2noise-audioviz/signal2noise-audioviz.html)**
 
 ---
 
@@ -26,21 +22,6 @@ Hosted via GitHub Pages. Click play, then try a preset — no install, no build 
 - **Docked tool tray** — full-bleed visualizer with a bottom drawer: drag the mesh-gradient grip to resize, double-click to collapse, `auto` to auto-hide on pointer leave, opacity slider to see the viz through the tools
 - **Mic sampler + preset builder** — record audio, onset detection + spectral centroid classifier auto-builds a drum pattern
 - **5 built-in presets** — boom bap, house, jungle, hip-hop, techno + random + clear
-
----
-
-## Repository structure
-
-```
-Signal2Noise_AudioViz/
-├── README.md                          ← this file
-├── HANDOFF.md                         ← session continuity: state, contract, backlog
-├── signal2noise-audioviz.html         ← the app (single file, zero dependencies)
-├── v8/
-│   └── signal2noise_v8.html           ← frozen baseline (pre-refactor, for diffing)
-└── architecture/
-    └── architecture_review.html       ← GoF / SOLID / test gap analysis (v8 rubric)
-```
 
 ---
 
@@ -63,10 +44,6 @@ Signal2Noise_AudioViz/
 | v9 steps 5–6 | **Docked tool tray** — full-bleed viz (render height 220→440, renderers rescaled via `init(env)` untouched), resizable/auto-hiding bottom drawer with opacity |
 
 ---
-
-## Architecture
-
-The v8 baseline analysis lives in [`architecture/architecture_review.html`](architecture/architecture_review.html) — 10 subsystems, 21 globals, 5 SOLID violations, 8 prioritized GoF patterns, 22 missing tests. It is the rubric v9 is measured against.
 
 ### v9 refactor progress
 
@@ -99,24 +76,9 @@ FM synthesis controls (separate synth panel): two-operator FM voices — modulat
 
 ---
 
-## Prototype-to-production teaching notes
-
-This project deliberately preserves its full iterative history — bugs found, tests written after the fact, architectural debt identified before refactoring. The distilled discipline, and the prompts that drove each phase, now live in [`HANDOFF.md`](HANDOFF.md) alongside the operational state. The short version:
-
-1. **Rapid prototyping is valid** — the fire engine, sequencer, and VFX system were all built fast and flat
-2. **Validation before production** — real bugs caught by simulating logic in Node.js *before* shipping (5 in v6, 3 pre-baseline, lifecycle seams in v9)
-3. **Architecture review as a checkpoint** — GoF gaps and SOLID violations identified before committing to a refactor
-4. **Commit before refactor** — v8 is the frozen before-state; the v8→v9 diff *is* the teaching material:
-
-```
-git diff v8-baseline..v9-step1
-```
-
----
-
 ## Running it
 
-Open `signal2noise-audioviz.html` directly in any modern browser — or grab it from [Releases](https://github.com/MeatPopSci1972/Signal2Noise_AudioViz/releases/latest). No build step, no dependencies. (`v8/signal2noise_v8.html` remains as the frozen baseline for diffing.)
+Open `signal2noise-audioviz.html` directly in any modern browser.
 
 Click the visualizer first to unlock the AudioContext, then hit **play** or click a preset. Spacebar toggles play; `h` toggles the tool tray.
 
