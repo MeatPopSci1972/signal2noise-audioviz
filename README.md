@@ -15,13 +15,15 @@ Hosted via GitHub Pages. Click play, then try a preset — no install, no build 
 ## What it does
 
 - **16-channel drum sequencer** — synthesized drums via Web Audio API, swing, 16/32 step modes
-- **View system (new in v9)** — tab bar of visualizer views built on a Renderer strategy contract
-- **Alpha view** — the original fire engine: cellular automaton pixels, each channel burns its own frequency column
+- **View system (v9)** — tab bar of visualizer views built on a Renderer strategy contract
+- **Alpha view** — the original fire engine: cellular automaton pixels, each channel burns its own frequency column, plus VFX and animorphic creatures
+- **Spiral view** — Cthugha-lineage feedback engine: rotate/zoom echo with pixel ghosting, bass drives rotation, treble drives zoom, per-channel comets
 - **6 VFX types per channel** — fire, strobe rings, balloons, sparkles, fireworks (googly-eyed), animorphic creatures
-- **Animorphic creatures** — persistent bezier blobs that walk a mountain silhouette, pulse on beat, blink, open their mouths
+- **Channel strip** — click channel names to select; one tri-state control set (VFX pills, volume, ⚡int) applies to the whole selection
+- **Per-channel intensity** — ⚡int flags which channels ride the intensity slider; excluded channels stay at baseline
+- **Docked tool tray** — full-bleed visualizer with a bottom drawer: drag the mesh-gradient grip to resize, double-click to collapse, `auto` to auto-hide on pointer leave, opacity slider to see the viz through the tools
 - **Mic sampler + preset builder** — record audio, onset detection + spectral centroid classifier auto-builds a drum pattern
 - **5 built-in presets** — boom bap, house, jungle, hip-hop, techno + random + clear
-- **Intensity slider** — uniform visual amplification across all layers
 
 ---
 
@@ -55,6 +57,10 @@ Signal2Noise_AudioViz/
 | v7 | **Bug fix:** fire visualization — analyser stride bug, per-channel direct heat injection, spectral centroid classifier |
 | v8 | 6 VFX types per channel (pills UI), animorphic creatures, mountain silhouette, fireworks with googly eyes. **Frozen as pre-refactor baseline.** |
 | v9 step 1 | **Refactor:** Renderer contract + EventBus. `trigViz()` deleted; all visual state moved into `createAlphaRenderer()`; globals 21 → 12; view tab bar added. Validated headless via Node.js lifecycle simulation. Behavior identical to v8 by contract. |
+| v9 step 2 | **Spiral view** — feedback engine (rotate/zoom echo + ghost fade), one factory + one `VIEWS` entry, proving the contract |
+| v9 steps 3–4 | **Channel strip** — per-row controls replaced by selection + one tri-state control set; per-channel intensity participation (`e.viz` added to the trigger payload) |
+| v9 step 4.1 | **Fix:** ambient fire heat gated to fire-enabled channels' regions — a latent v8 behavior exposed by the new per-channel toggle |
+| v9 steps 5–6 | **Docked tool tray** — full-bleed viz (render height 220→440, renderers rescaled via `init(env)` untouched), resizable/auto-hiding bottom drawer with opacity |
 
 ---
 
@@ -66,7 +72,7 @@ The v8 baseline analysis lives in [`architecture/architecture_review.html`](arch
 
 | Finding | Status |
 |---------|--------|
-| Strategy — renderer side | ✅ step 1: `createAlphaRenderer()` behind init/onTrigger/tick/dispose |
+| Strategy — renderer side | ✅ steps 1–2: Alpha extracted, Spiral added as pure factory — contract proven by a second implementation |
 | Observer / EventBus | ✅ step 1: scheduler emits `trigger`; `trigViz()` deleted |
 | Strategy — synth side | ⬜ planned (FM synth track) |
 | Template Method — unified VFX lifecycle | ◐ partially absorbed by the renderer contract; revisit inside Alpha |
@@ -80,8 +86,8 @@ The v8 baseline analysis lives in [`architecture/architecture_review.html`](arch
 | View | Status | Core idea |
 |------|--------|-----------|
 | alpha | ✅ shipped (v9 step 1) | Cthugha-lineage fire + VFX + creatures (the v8 look) |
-| spiral | next | Feedback buffer with pixel ghosting — no clear, translucent fade + rotate |
-| sand | planned | Particle deposition; channels pour colored grains, the pile is the song's history |
+| spiral | ✅ shipped (v9 step 2) | Feedback buffer with pixel ghosting — no clear, translucent fade + rotate |
+| sand | next | Particle deposition; channels pour colored grains, the pile is the song's history |
 | organic | planned | Metaballs; channel blobs grow on triggers and absorb each other |
 | galactic | planned | Softened n-body; mass centers per channel group, triggers add mass and velocity |
 
@@ -112,9 +118,11 @@ git diff v8-baseline..v9-step1
 
 Open `v9/signal2noise_v9.html` directly in any modern browser. No build step, no dependencies. (`v8/signal2noise_v8.html` remains as the frozen baseline for diffing.)
 
-Click the visualizer first to unlock the AudioContext, then hit **play** or click a preset.
+Click the visualizer first to unlock the AudioContext, then hit **play** or click a preset. Spacebar toggles play; `h` toggles the tool tray.
 
-For mic input / sampler: click **arm mic** and grant browser microphone permission.
+The tools live in a bottom drawer: drag its gradient grip to resize, double-click it to collapse, `auto` to auto-hide, and the opacity slider to watch the viz through the panel. Click channel names to select them; the control strip applies to the selection.
+
+For mic input / sampler: click **arm mic** and grant browser microphone permission. (Known issue: a permission error is under investigation — see HANDOFF.md.)
 
 Clicking the active view tab re-runs the renderer's dispose→init cycle — a built-in lifecycle self-test.
 

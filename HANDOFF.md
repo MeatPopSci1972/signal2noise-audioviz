@@ -8,11 +8,27 @@
 
 ## 1. Current state
 
-- **Current version:** `v9/signal2noise_v9.html` — v9 step 4 (channel strip)
+- **Current version:** `v9/signal2noise_v9.html` — v9 step 5 (floating tools)
   - step 1 renderer extraction: ✅ committed, checkpoint passed
   - step 2 spiral view: ✅ checkpoint passed (feedback engine, bass→rotation, treble/mic→zoom)
   - step 3 tool tray: gate passed, ⬜ browser checkpoint pending
-  - step 4 channel strip + per-channel intensity: gate passed, ⬜ browser checkpoint pending
+  - step 4 channel strip + per-channel intensity: ✅ checkpoint passed
+  - step 4.1 fire ambient-gating fix: gate passed, ⬜ browser checkpoint pending.
+    v8 latent behavior: ambient spectrum→heat injected unconditionally, so the
+    fire pill looked permanently on. Now ambient heat only lands inside
+    fire-enabled channels' x-regions (chanVfx added to shared read-only inputs);
+    mic heat requires ≥1 fire-enabled channel. Deliberate v8-behavior change.
+  - step 5 floating tools: superseded by step 6 same-session (user wanted
+    docked, not floating). Kept: mesh-gradient grip, opacity slider,
+    FH 220→440, ✕ / `tools` button / `h`.
+  - step 6 docked tray: gate passed, ⬜ browser checkpoint pending.
+    Bottom-docked drawer, full-bleed app (viz fills viewport behind it).
+    Grip drag = ns-resize (clamped grip-height…92vh); drag-collapse preserves
+    the restore height (bug caught by gate: trayH was being clobbered);
+    dblclick grip = quick collapse/expand; `auto` button = collapse on
+    pointerleave, expand on pointerenter. Canvas now CSS-stretched to fill
+    (non-uniform scale — Cthugha-appropriate; revisit if it bothers).
+    Perf watch stands: fire automaton at 2× cells.
 - **Frozen baseline:** `v8/signal2noise_v8.html` — do not modify; it exists so `git diff` tells the refactor story
 - **Behavior contract for step 1:** visually and audibly identical to v8
 - **Validation done:** headless Node.js simulation (stubbed DOM/Canvas/WebAudio) — load+init, dispose→init lifecycle, dispatch→bus→onTrigger→tick full frame, all 6 VFX paths incl. balloon-pop over 120 frames, and exactly **1** trigger listener on the bus after repeated view switches (no leak)
@@ -100,16 +116,12 @@ dispose()       Release everything. Manager may init a different renderer
 1. ✅ Checkpoint v9 step 1 — passed (boom matched side by side)
 2. ✅ Commit step 1; `index.html` redirect → v9 — done
 3. ✅ **Spiral view** — shipped + checkpoint passed
-4. ⬜ **Tool tray** (step 3) — built, gate passed; browser checkpoint pending.
-   `▾ hide` collapses transport/presets/grid/vizBar/sampler; app widens
-   (theater mode) so the viz gets more pixels. `h` key toggles.
-5. ⬜ **Channel strip** (step 4) — built, gate passed; browser checkpoint
-   pending. Click channel NAMES to select (amber); all/none buttons; one
-   tri-state pill set + volume slider + ⚡int toggle apply to the selection.
-   Per-row pills and volume sliders removed. chanIntensity[] flags which
-   channels ride the intensity slider; excluded channels show dimmed names
-   and pin at baseline 1.0 (payload e.viz). Tri-state rule: mixed/off →
-   fill all selected, full → clear all selected.
+4. ✅ Tool tray (step 3) — superseded by step 5's floating tray
+5. ✅ **Channel strip** (step 4) — checkpoint passed. Click channel NAMES to
+   select; tri-state pills + volume + ⚡int apply to selection; excluded
+   channels dim and pin at e.viz=1.0.
+5b. ⬜ **Step 4.1 + 5 checkpoint** — fire pill actually kills fire per-channel;
+   tray drags/opacity/toggles; viz at 2× height holds framerate.
 6. ⬜ Sand view — particle deposition, per-channel pour points, heightmap + angle of repose
 7. ⬜ Organic view — metaballs via radial gradients + threshold pass
 8. ⬜ Galactic view — softened n-body, triggers add mass/velocity

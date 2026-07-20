@@ -6,10 +6,10 @@
 <title>Signal2Noise AudioViz v9</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-#app{background:#080808;border-radius:8px;font-family:monospace;overflow:hidden;display:flex;flex-direction:column;max-width:900px;margin:0 auto}
-#fireWrap{position:relative;width:100%;background:#000;flex-shrink:0;cursor:pointer}
-#cv,#vfx{display:block;width:100%}
-#vfx{position:absolute;top:0;left:0;height:100%;pointer-events:none}
+#app{background:#080808;font-family:monospace;overflow:hidden;display:flex;flex-direction:column;width:100%;height:100vh}
+#fireWrap{position:relative;width:100%;background:#000;flex:1;min-height:0;cursor:pointer;overflow:hidden}
+#cv,#vfx{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
+#vfx{pointer-events:none}
 #transport{display:flex;align-items:center;gap:7px;padding:5px 9px;background:#050505;border-bottom:1px solid #161616;flex-wrap:wrap}
 #playBtn{background:#111;color:#fa0;border:1px solid #fa0;border-radius:3px;font-size:11px;padding:4px 11px;cursor:pointer;font-family:monospace}
 #playBtn.on{background:#fa0;color:#000}
@@ -27,14 +27,14 @@ input[type=range]{accent-color:#f60}
 .preset:hover{color:#fa0;border-color:#fa0}.preset.active{color:#fa0;border-color:#fa0;background:#1a1000}
 .preset.sampled{color:#4fa;border-color:#1a3a2a}.preset.util{color:#4af;border-color:#1a3a5a}.preset.util:hover{color:#8df;border-color:#4af}.preset.util.active{background:#001018;color:#8df}
 .preset.danger{color:#f64;border-color:#3a1a0a}.preset.danger:hover{color:#f96;border-color:#f64}
-#grid{overflow-y:auto;max-height:200px;padding:2px 6px}
+#grid{padding:2px 6px}
 .ch{display:flex;align-items:center;margin-bottom:2px;gap:0}
 .chName{width:44px;font-size:8px;color:#555;text-align:right;padding-right:5px;flex-shrink:0;white-space:nowrap;cursor:pointer;border-radius:2px;transition:color .1s,background .1s}
 .chName:hover{color:#fa0}
 .chName.sel{color:#fa0;background:#1a1000}
 .chName.intOff{opacity:.4}
 .steps{display:flex;gap:2px;flex:1}
-.step{flex:1;max-width:26px;height:18px;border-radius:2px;border:1px solid #161616;background:#0c0c0c;cursor:pointer}
+.step{flex:1;max-width:44px;height:18px;border-radius:2px;border:1px solid #161616;background:#0c0c0c;cursor:pointer}
 .step:hover{border-color:#2a2a2a}.step.on{border-color:#666}.step.cur{border-color:#fa0!important}.step.on.cur{background:#fa0!important;border-color:#fca!important}
 .sep{width:3px;flex-shrink:0}
 .pill{font-size:7px;padding:1px 4px;border-radius:2px;border:1px solid #1e1e1e;background:#0a0a0a;color:#333;cursor:pointer;white-space:nowrap;user-select:none}
@@ -44,8 +44,9 @@ input[type=range]{accent-color:#f60}
 #chanStrip label{color:#2a2a2a;font-size:9px}
 .cbtn{background:#090909;color:#555;border:1px solid #161616;border-radius:2px;font-size:9px;padding:3px 7px;cursor:pointer;font-family:monospace}
 .cbtn:hover{color:#fa0;border-color:#fa0}
-#stripPills{display:flex;gap:3px;flex-wrap:wrap}
-#stripPills .pill,#stripInt{font-size:9px;padding:2px 6px}
+#stripPills{display:flex;gap:3px;flex:1;min-width:260px}
+#stripPills .pill{flex:1;text-align:center}
+#stripPills .pill,#stripInt{font-size:10px;padding:4px 6px}
 #stripVol{width:62px}
 #stripHint{color:#2a2a2a;font-size:9px;display:none}
 #chanStrip.idle #stripHint{display:inline}
@@ -72,13 +73,25 @@ input[type=range]{accent-color:#f60}
 #title-bar{padding:5px 9px;background:#030303;border-bottom:1px solid #0f0f0f;display:flex;align-items:center;gap:8px}
 #title-bar span{color:#fa0;font-size:11px;font-weight:500;letter-spacing:1px}
 #title-bar .ver{color:#333;font-size:9px}
-/* ── Tool tray (v9 step 3) ── */
-#trayBar{display:flex;align-items:center;gap:6px;padding:2px 9px;background:#030303;border-bottom:1px solid #0f0f0f}
-#trayBar span{color:#2a2a2a;font-size:9px;margin-right:auto}
-#trayToggle{background:#090909;color:#555;border:1px solid #161616;border-radius:2px;font-size:9px;padding:2px 8px;cursor:pointer;font-family:monospace;transition:color .1s,border-color .1s}
-#trayToggle:hover{color:#fa0;border-color:#fa0}
+/* ── Floating tool tray (v9 step 5) ── */
+#tray{position:fixed;z-index:40;left:0;right:0;bottom:0;height:44vh;overflow-y:auto;background:#080808f2;border-top:1px solid #1e1e1e;box-shadow:0 -8px 40px #000c}
 #tray.closed{display:none}
-#app.theater{max-width:none}
+#trayGrip{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:7px 11px;cursor:ns-resize;user-select:none;touch-action:none;background:
+  radial-gradient(at 12% 25%, rgba(246,2,51,.38) 0, transparent 55%),
+  radial-gradient(at 82% 12%, rgba(255,170,0,.55) 0, transparent 52%),
+  radial-gradient(at 62% 95%, rgba(6,200,200,.32) 0, transparent 55%),
+  radial-gradient(at 30% 85%, rgba(255,102,0,.42) 0, transparent 50%),
+  #0a0a0a}
+#trayGrip:active{cursor:ns-resize}
+#autoBtn{background:#0009;color:#ffffff88;border:1px solid #ffffff33;border-radius:2px;font-size:9px;padding:2px 7px;cursor:pointer;font-family:monospace}
+#autoBtn.on{color:#000;background:#fa0;border-color:#fa0}
+#trayGrip .glabel{color:#fff;font-size:10px;letter-spacing:2px;text-shadow:0 1px 3px #000}
+#trayGrip .tctl label{color:#eeeeee99}
+#trayOpacity{width:70px}
+#trayHide{margin-left:auto;background:none;border:none;color:#ffffff99;font-size:12px;cursor:pointer;font-family:monospace;padding:0 3px}
+#trayHide:hover{color:#fff}
+#toolsBtn{margin-left:auto;background:#090909;color:#555;border:1px solid #161616;border-radius:2px;font-size:9px;padding:3px 9px;cursor:pointer;font-family:monospace;transition:color .1s,border-color .1s}
+#toolsBtn:hover,#toolsBtn.on{color:#fa0;border-color:#fa0}
 /* ── View tab bar (new in v9) ── */
 #viewTabs{display:flex;gap:4px;align-items:center;padding:4px 9px;background:#040404;border-bottom:1px solid #0f0f0f}
 #viewTabs label{color:#2a2a2a;font-size:9px}
@@ -87,13 +100,13 @@ input[type=range]{accent-color:#f60}
 .vtab.active{color:#fa0;border-color:#fa0;background:#1a1000}
 </style>
 </head>
-<body style="background:#111;padding:1rem">
+<body style="background:#111;padding:0;margin:0;overflow:hidden">
 <div id="app">
-<div id="title-bar"><span>SIGNAL2NOISE AUDIOVIZ</span><span class="ver">v9 &middot; step 4: channel strip</span></div>
+<div id="title-bar"><span>SIGNAL2NOISE AUDIOVIZ</span><span class="ver">v9 &middot; step 6: docked tray</span><button id="toolsBtn" class="on">tools</button></div>
 <div id="viewTabs"><label>view:</label></div>
 <div id="fireWrap"><canvas id="cv"></canvas><canvas id="vfx"></canvas></div>
-<div id="trayBar"><span>tools</span><button id="trayToggle">&#9662; hide</button></div>
 <div id="tray">
+<div id="trayGrip"><span class="glabel">TOOLS</span><div class="tctl"><label>opacity</label><input type="range" id="trayOpacity" min="0.25" max="1" step="0.05" value="1"></div><button id="autoBtn" title="auto-hide on pointer leave">auto</button><button id="trayHide" title="hide (h)">&#10005;</button></div>
 <div id="transport">
   <button id="playBtn">&#9654; play</button>
   <div class="tctl"><label>bpm</label><input type="range" id="bpmSlider" min="60" max="200" value="90" step="1"><span class="tval" id="bpmVal">90</span></div>
@@ -157,7 +170,9 @@ input[type=range]{accent-color:#f60}
 // Global count: 21 → 12 (the 9 visual-state globals moved into Alpha's closure).
 
 // ── Canvas + audio plumbing (app-owned) ──
-const FW=640,FH=220;
+// FH doubled 220→440 in step 5: the tools float over the viz now, so the
+// visualization owns the vertical space. Renderers scale via init(env).
+const FW=640,FH=440;
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const vfx=document.getElementById('vfx'),vx=vfx.getContext('2d');
 cv.width=FW;cv.height=FH;vfx.width=FW;vfx.height=FH;
@@ -255,7 +270,8 @@ const bus={
 //                   init a different renderer on the same canvases.
 //
 // Shared read-only inputs a renderer may reference: CH_HEAT, CHANNELS,
-// vizIntensity. Everything else it owns privately.
+// vizIntensity, chanVfx (Alpha reads it for ambient gating + creature/
+// balloon visibility). Everything else it owns privately.
 // ══════════════════════════════════════════════════════════════════
 
 // ── Alpha — the v8 look, verbatim: Cthugha-lineage fire + VFX + creatures ──
@@ -282,8 +298,20 @@ function createAlphaRenderer(){
 
   // ── Fire engine (cellular automaton, private) ──
   function fireTick(seqFreq,micLevel){
-    for(let b=0;b<seqFreq.length;b++){const v=seqFreq[b]/255;if(v>.15)addHeat(b/seqFreq.length,.025,v*.22);}
-    if(micLevel>.01)addHeat(.3+Math.random()*.4,.2+micLevel*.4,micLevel*1.2);
+    // Ambient spectrum heat only inside fire-enabled channels' x-regions.
+    // (Fix, step 4.1: v8 injected ambient heat unconditionally, which made
+    // the fire pill look permanently on — trigger heat obeyed it, ambient
+    // heat didn't. chanVfx is a documented shared read-only input.)
+    const segs=[];
+    for(let ci=0;ci<CH_HEAT.length;ci++){if(chanVfx[ci].has('fire')){const xf=CH_HEAT[ci][0],w=CH_HEAT[ci][1];segs.push([xf-w/2,xf+w/2]);}}
+    if(segs.length){
+      for(let b=0;b<seqFreq.length;b++){
+        const v=seqFreq[b]/255;if(v<=.15)continue;
+        const xf=b/seqFreq.length;
+        for(let s=0;s<segs.length;s++){if(xf>=segs[s][0]&&xf<=segs[s][1]){addHeat(xf,.025,v*.22);break;}}
+      }
+      if(micLevel>.01)addHeat(.3+Math.random()*.4,.2+micLevel*.4,micLevel*1.2);
+    }
     for(let y=0;y<FH-1;y++)for(let x=0;x<FW;x++)fireData[y*FW+x]=fireData[(y+1)*FW+x];
     const bot=(FH-1)*FW;for(let x=0;x<FW;x++)fireData[bot+x]*=.15;
     activeHeat.forEach(h=>{const cx=Math.floor(h.xf*FW),hw=Math.max(1,Math.floor(h.w*FW/2));for(let x=Math.max(0,cx-hw);x<Math.min(FW,cx+hw);x++){const dist=Math.abs(x-cx)/hw;fireData[bot+x]=Math.min(255,fireData[bot+x]+h.intensity*h.life*Math.cos(dist*Math.PI*.5)*.7+Math.random()*2);}h.life-=h.decay;});
@@ -717,20 +745,52 @@ function addSampleSlot(name,buf){
 }
 buildBtn.addEventListener('click',()=>{if(!recBuffer){document.getElementById('samplerStatus').textContent='record something first';return;}const name=document.getElementById('presetNameIn').value.trim()||('smpl-'+Date.now().toString(36).slice(-4));analyzeAndBuildPreset(recBuffer,name);});
 
-// ── Tool tray: hide the tool sections, widen the app for more viz pixels ──
-const trayEl=document.getElementById('tray'),trayToggle=document.getElementById('trayToggle');
+// ── Floating tool tray: draggable overlay, opacity dial, h to toggle ──
+const trayEl=document.getElementById('tray');
+const toolsBtn=document.getElementById('toolsBtn');
 let trayOpen=true;
 function setTray(open){
   trayOpen=open;
   trayEl.classList.toggle('closed',!open);
-  document.getElementById('app').classList.toggle('theater',!open);
-  trayToggle.innerHTML=open?'&#9662; hide':'&#9652; show';
+  toolsBtn.classList.toggle('on',open);
 }
-trayToggle.addEventListener('click',()=>setTray(!trayOpen));
-// 'h' toggles the tray from anywhere (same input guard as spacebar)
+toolsBtn.addEventListener('click',()=>setTray(!trayOpen));
+document.getElementById('trayHide').addEventListener('click',()=>setTray(false));
 document.addEventListener('keydown',e=>{
   if(e.key==='h'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA')setTray(!trayOpen);
 });
+document.getElementById('trayOpacity').addEventListener('input',function(){trayEl.style.opacity=this.value;});
+// Dock resize: grab the grip, drag up/down; the viz keeps the rest.
+const grip=document.getElementById('trayGrip');
+const GRIP_H=34;                                   // collapsed = grip only
+let trayH=Math.round(window.innerHeight*0.44);     // last expanded height
+let resizing=false,autoHide=false,collapsed=false;
+function applyTrayH(h){trayEl.style.height=Math.round(h)+'px';}
+function expandTray(){collapsed=false;applyTrayH(trayH);}
+function collapseTray(){collapsed=true;applyTrayH(GRIP_H);}
+grip.addEventListener('pointerdown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON')return;
+  resizing=true;grip.setPointerCapture(e.pointerId);
+});
+grip.addEventListener('pointermove',e=>{
+  if(!resizing)return;
+  const h=Math.min(Math.max(GRIP_H,window.innerHeight-e.clientY),window.innerHeight*.92);
+  collapsed=h<=GRIP_H+2;
+  if(!collapsed)trayH=h;   // only remember expanded heights — drag-collapse must not clobber the restore point
+  applyTrayH(h);
+});
+grip.addEventListener('pointerup',()=>{resizing=false;});
+// Double-click the grip: quick collapse/expand
+grip.addEventListener('dblclick',()=>{collapsed?expandTray():collapseTray();});
+// Auto-hide: collapse when the pointer leaves the tray, expand on return
+const autoBtn=document.getElementById('autoBtn');
+autoBtn.addEventListener('click',()=>{
+  autoHide=!autoHide;autoBtn.classList.toggle('on',autoHide);
+  if(autoHide)collapseTray();else expandTray();
+});
+trayEl.addEventListener('pointerenter',()=>{if(autoHide&&!resizing)expandTray();});
+trayEl.addEventListener('pointerleave',()=>{if(autoHide&&!resizing)collapseTray();});
+window.addEventListener('resize',()=>{if(!collapsed)applyTrayH(Math.min(trayH,window.innerHeight*.92));});
 
 // ── Init ──
 switchView('alpha');
