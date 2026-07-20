@@ -60,10 +60,6 @@ signal2noise-audioviz/
 
 ---
 
-## Architecture
-
-The v8 baseline analysis lives in [`architecture/architecture_review.html`](architecture/architecture_review.html) — 10 subsystems, 21 globals, 5 SOLID violations, 8 prioritized GoF patterns, 22 missing tests. It is the rubric v9 is measured against.
-
 ### v9 refactor progress
 
 | Finding | Status |
@@ -112,7 +108,7 @@ git diff v8-baseline..v9-step1
 
 ## Running it
 
-Open `signal2noise-audioviz.html` directly in any modern browser — or grab it from [Releases](https://github.com/MeatPopSci1972/signal2noise-audioviz/releases/latest). No build step, no dependencies. (`v8/signal2noise_v8.html` remains as the frozen baseline for diffing.)
+Open `signal2noise-audioviz.html` directly in any modern browser.
 
 Click the visualizer first to unlock the AudioContext, then hit **play** or click a preset. Spacebar toggles play; `h` toggles the tool tray.
 
