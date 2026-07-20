@@ -46,11 +46,13 @@
 ```
 README.md                        project front door; history table; roadmaps
 HANDOFF.md                       this file — state, contract, workflow, backlog
-index.html                       redirect to the current version (still → v8; update after checkpoint)
+signal2noise-audioviz.html       the app — current working file (single-file, zero-dependency)
 v8/signal2noise_v8.html          frozen pre-refactor baseline
-v9/signal2noise_v9.html          current working file (single-file, zero-dependency)
 architecture/architecture_review.html   v8 rubric: GoF / SOLID / 22 missing tests
 ```
+Branch: `main` (master deleted). Live demo is served by GitHub Pages from main
+at /signal2noise-audioviz.html — there is no index.html, so the bare Pages URL
+404s by design; README links the full path.
 
 Everything ships as single-file HTML. No build step. proto2prod rules apply:
 validate before optimize, surgical edits, visible errors over graceful degradation.
@@ -108,8 +110,10 @@ dispose()       Release everything. Manager may init a different renderer
 4. Commit with a message referencing the architecture-review finding it closes,
    e.g. `refactor: Strategy + EventBus — renderer extraction, view tab bar (v9 step 1)`.
 5. Never check in broken code — a broken baseline makes the diff story unreadable.
-6. When a version is complete: update `index.html` redirect, README history table,
-   and this file's §1/§5, then tag.
+6. When a version is complete: update the README history table and this file's
+   §1/§5, then tag and release: `git tag <tag> && git push --tags`, GitHub →
+   Releases → attach `signal2noise-audioviz.html` → publish. README links
+   /releases/latest, so no README edit is needed per release.
 
 ## 5. Backlog (ordered)
 

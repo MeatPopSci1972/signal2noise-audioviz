@@ -6,9 +6,11 @@ Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualize
 
 ## Live demo
 
-**[▶ Launch Signal2Noise AudioViz](https://meatpopsci1972.github.io/Signal2Noise_AudioViz/)**
+**[▶ Launch Signal2Noise AudioViz](https://meatpopsci1972.github.io/Signal2Noise_AudioViz/signal2noise-audioviz.html)**
 
 Hosted via GitHub Pages. Click play, then try a preset — no install, no build step.
+
+**[⬇ Download the latest release](https://github.com/MeatPopSci1972/Signal2Noise_AudioViz/releases/latest)** — a single self-contained HTML file. Save it, open it in a browser, done.
 
 ---
 
@@ -33,11 +35,9 @@ Hosted via GitHub Pages. Click play, then try a preset — no install, no build 
 Signal2Noise_AudioViz/
 ├── README.md                          ← this file
 ├── HANDOFF.md                         ← session continuity: state, contract, backlog
-├── index.html                         ← redirect to current version
+├── signal2noise-audioviz.html         ← the app (single file, zero dependencies)
 ├── v8/
-│   └── signal2noise_v8.html           ← frozen baseline (pre-refactor)
-├── v9/
-│   └── signal2noise_v9.html           ← current: renderer extraction + view tabs
+│   └── signal2noise_v8.html           ← frozen baseline (pre-refactor, for diffing)
 └── architecture/
     └── architecture_review.html       ← GoF / SOLID / test gap analysis (v8 rubric)
 ```
@@ -116,7 +116,7 @@ git diff v8-baseline..v9-step1
 
 ## Running it
 
-Open `v9/signal2noise_v9.html` directly in any modern browser. No build step, no dependencies. (`v8/signal2noise_v8.html` remains as the frozen baseline for diffing.)
+Open `signal2noise-audioviz.html` directly in any modern browser — or grab it from [Releases](https://github.com/MeatPopSci1972/Signal2Noise_AudioViz/releases/latest). No build step, no dependencies. (`v8/signal2noise_v8.html` remains as the frozen baseline for diffing.)
 
 Click the visualizer first to unlock the AudioContext, then hit **play** or click a preset. Spacebar toggles play; `h` toggles the tool tray.
 
