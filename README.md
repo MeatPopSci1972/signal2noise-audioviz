@@ -25,17 +25,6 @@ Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualize
 
 ---
 
-## Repository structure
-
-```
-signal2noise-audioviz/
-├── README.md                          ← this file
-├── HANDOFF.md                         ← session continuity: state, contract, backlog
-└── signal2noise-audioviz.html         ← the app (single file, zero dependencies)
-```
-
----
-
 ## Prototype history
 
 | Version | What changed |
