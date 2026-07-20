@@ -8,10 +8,6 @@ Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualize
 
 **[▶ Launch Signal2Noise AudioViz](https://meatpopsci1972.github.io/signal2noise-audioviz/signal2noise-audioviz.html)**
 
-Hosted via GitHub Pages. Click play, then try a preset — no install, no build step.
-
-**[⬇ Download the latest release](https://github.com/MeatPopSci1972/signal2noise-audioviz/releases/latest)** — a single self-contained HTML file. Save it, open it in a browser, done.
-
 ---
 
 ## What it does
