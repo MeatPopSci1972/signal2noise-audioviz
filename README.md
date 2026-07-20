@@ -31,11 +31,7 @@ Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualize
 signal2noise-audioviz/
 ├── README.md                          ← this file
 ├── HANDOFF.md                         ← session continuity: state, contract, backlog
-├── signal2noise-audioviz.html         ← the app (single file, zero dependencies)
-├── v8/
-│   └── signal2noise_v8.html           ← frozen baseline (pre-refactor, for diffing)
-└── architecture/
-    └── architecture_review.html       ← GoF / SOLID / test gap analysis (v8 rubric)
+└── signal2noise-audioviz.html         ← the app (single file, zero dependencies)
 ```
 
 ---
