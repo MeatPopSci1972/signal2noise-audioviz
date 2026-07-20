@@ -2,7 +2,7 @@
 
 A browser-based audio visualizer + drum sequencer, built as a prototype-to-production teaching project.
 
-Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualizer by Kevin "Zaph" Burfitt. Cthugha's engine was feedback-based — pixel translation tables and palette rotation — a lineage that continues directly into the upcoming Spiral view.
+Originally inspired by Cthugha (1993), a classic DOS fire-and-waveform visualizer by Kevin "Zaph" Burfitt. Cthugha's engine was feedback-based — pixel translation tables and palette rotation.
 
 ## Live demo
 
@@ -73,21 +73,6 @@ All views consume the same inputs — per-channel trigger events + a per-frame s
 ### Sound roadmap
 
 FM synthesis controls (separate synth panel): two-operator FM voices — modulator → gain (index) → carrier frequency — with ratio / index / decay dials. Requires the synth-side Strategy refactor first.
-
----
-
-## Prototype-to-production teaching notes
-
-This project deliberately preserves its full iterative history — bugs found, tests written after the fact, architectural debt identified before refactoring. The distilled discipline, and the prompts that drove each phase, now live in [`HANDOFF.md`](HANDOFF.md) alongside the operational state. The short version:
-
-1. **Rapid prototyping is valid** — the fire engine, sequencer, and VFX system were all built fast and flat
-2. **Validation before production** — real bugs caught by simulating logic in Node.js *before* shipping (5 in v6, 3 pre-baseline, lifecycle seams in v9)
-3. **Architecture review as a checkpoint** — GoF gaps and SOLID violations identified before committing to a refactor
-4. **Commit before refactor** — v8 is the frozen before-state; the v8→v9 diff *is* the teaching material:
-
-```
-git diff v8-baseline..v9-step1
-```
 
 ---
 
